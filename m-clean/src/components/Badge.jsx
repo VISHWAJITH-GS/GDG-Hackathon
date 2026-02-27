@@ -1,26 +1,25 @@
 // src/components/Badge.jsx
 // -------------------------------------------------------
-// Status badge — government portal style.
-// Solid bordered pill with official colour coding.
-// Note: React requires style as an object, not a string.
+// Status badge — Tamil Nadu Government official style.
+// Flat design with subtle border and formal color coding.
 // -------------------------------------------------------
 
 const STATUS_MAP = {
     pending: {
         label: 'Pending',
-        style: { background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D' },
+        style: { background: '#FEF3C7', color: '#78350F', border: '1px solid #FCD34D' },
     },
     inprogress: {
         label: 'In Progress',
-        style: { background: '#DBEAFE', color: '#1E40AF', border: '1px solid #93C5FD' },
+        style: { background: '#DBEAFE', color: '#1E3A8A', border: '1px solid #93C5FD' },
     },
     resolved: {
         label: 'Resolved',
-        style: { background: '#DCFCE7', color: '#166534', border: '1px solid #86EFAC' },
+        style: { background: '#DCFCE7', color: '#14532D', border: '1px solid #86EFAC' },
     },
     rejected: {
         label: 'Rejected',
-        style: { background: '#FEE2E2', color: '#991B1B', border: '1px solid #FCA5A5' },
+        style: { background: '#FEE2E2', color: '#7F1D1D', border: '1px solid #FCA5A5' },
     },
 }
 

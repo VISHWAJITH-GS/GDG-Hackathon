@@ -275,7 +275,7 @@ export default function Heatmap() {
             {/* Stat row */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-[var(--color-surface)]">
                 <StatCard label="Reports Today" value={loading ? '—' : todayReports.length} icon="📋" accent="var(--color-gov-700)" />
-                <StatCard label="Total Reports" value={loading ? '—' : totalReports} icon="🗂️" accent="var(--color-chakra)" />
+                <StatCard label="Total Reports" value={loading ? '—' : totalReports} icon="🗂️" accent="#104080" />
                 <StatCard label="Critical Zones" value={loading ? '—' : criticalCount} icon="🚨" accent="#DC2626" />
             </div>
 
