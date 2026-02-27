@@ -2,12 +2,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Complaints — public write (citizen reporting), restricted read
+    // Complaints — citizens create; municipal officers read/update any
     match /complaints/{complaintId} {
       allow create: if true;
-      allow read: if request.auth != null;
-      allow update: if request.auth != null;
+      allow read:   if request.auth != null;
+      allow update: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+          in ["admin", "municipality"];
       allow delete: if false;
+    }
+
+    // Reports (m-clean reports collection)
+    match /reports/{reportId} {
+      allow read, update: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+          in ["admin", "municipality"];
+      allow create: if request.auth != null;
     }
 
     // Verifications — restricted to authenticated workers

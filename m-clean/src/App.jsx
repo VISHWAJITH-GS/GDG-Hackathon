@@ -20,9 +20,12 @@ import RegisterPage from './pages/RegisterPage'
 import CitizenDashboard from './pages/CitizenDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminLoginPage from './pages/AdminLoginPage'
+import AdminLogin from './pages/AdminLogin'
 import HeatmapPage from './pages/HeatmapPage'
 import DailyReportPage from './pages/DailyReportPage'
+import Leaderboard from './pages/Leaderboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRouteAdmin from './components/ProtectedRouteAdmin'
 import { AuthProvider } from './context/AuthContext'
 import { FUNCTIONS_CONFIGURED, MAPS_CONFIGURED } from './config'
 
@@ -31,6 +34,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/report', label: 'File a Complaint', end: true },
   { to: '/map', label: 'Monitoring Map', end: true },
+  { to: '/leaderboard', label: 'Leaderboard', end: true },
   { to: '/daily-report', label: 'Daily Report', end: true },
   { to: '/login', label: 'Login', end: true },
 ]
@@ -253,12 +257,17 @@ export default function App() {
           <Route path="/report"   element={<GovLayout><Home /></GovLayout>} />
           <Route path="/map"          element={<GovLayout><HeatmapPage /></GovLayout>} />
           <Route path="/daily-report"  element={<GovLayout><DailyReportPage /></GovLayout>} />
+          <Route path="/leaderboard"   element={<GovLayout><Leaderboard /></GovLayout>} />
           <Route path="/dashboard"     element={<GovLayout><OfficerDashboard /></GovLayout>} />
 
           {/* ── Auth routes (no layout) ── */}
           <Route path="/login"     element={<LoginPage />} />
           <Route path="/register"  element={<RegisterPage />} />
-          <Route path="/admin-mc"  element={<AdminLoginPage />} />
+
+          {/* ── Admin / Municipality login ── */}
+          <Route path="/admin"    element={<AdminLogin />} />
+          {/* Legacy admin login alias */}
+          <Route path="/admin-mc" element={<AdminLoginPage />} />
 
           {/* ── Protected citizen dashboard ── */}
           <Route path="/citizen" element={
@@ -267,11 +276,11 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* ── Protected admin dashboard ── */}
-          <Route path="/admin" element={
-            <ProtectedRoute role="admin">
+          {/* ── Protected admin/municipality dashboard ── */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRouteAdmin>
               <AdminDashboard />
-            </ProtectedRoute>
+            </ProtectedRouteAdmin>
           } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
