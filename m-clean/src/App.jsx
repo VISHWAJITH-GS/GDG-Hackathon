@@ -14,11 +14,20 @@
 import { BrowserRouter, Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import OfficerDashboard from './pages/OfficerDashboard'
+import LandingPage from './pages/LandingPage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import CitizenDashboard from './pages/CitizenDashboard'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminLoginPage from './pages/AdminLoginPage'
+import ProtectedRoute from './components/ProtectedRoute'
+import { AuthProvider } from './context/AuthContext'
 import { FUNCTIONS_CONFIGURED, MAPS_CONFIGURED } from './config'
 
 // ── Navigation items ──────────────────────────────────────────
 const NAV_ITEMS = [
-  { to: '/', label: 'File a Complaint', end: true },
+  { to: '/', label: 'Home', end: true },
+  { to: '/report', label: 'File a Complaint', end: true },
   { to: '/dashboard', label: 'Officer Dashboard', end: false },
 ]
 
@@ -75,29 +84,6 @@ function EnvBanner() {
           ))}
           — add to <code className="bg-amber-100 border border-amber-300 px-1 rounded">m-clean/.env</code>
         </span>
-      </div>
-    </div>
-  )
-}
-
-// ── Breadcrumb bar ────────────────────────────────────────────
-function Breadcrumb() {
-  const { pathname } = useLocation()
-  const crumb = pathname === '/'
-    ? 'File a Complaint'
-    : pathname === '/dashboard'
-      ? 'Officer Dashboard'
-      : 'Page'
-
-  return (
-    <div
-      className="bg-[#e8edf4] border-b border-[#d1d9e6]"
-      aria-label="Breadcrumb"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-1.5 flex items-center gap-1.5 text-xs text-[var(--color-muted)]">
-        <span>Home</span>
-        <span aria-hidden="true">›</span>
-        <span className="text-[var(--color-gov-700)] font-medium">{crumb}</span>
       </div>
     </div>
   )
@@ -197,10 +183,7 @@ function GovLayout({ children }) {
         </nav>
       </header>
 
-      {/* ── 5. Breadcrumb ── */}
-      <Breadcrumb />
-
-      {/* ── 6. Env warning (only when keys are missing) ── */}
+      {/* ── 5. Env warning (only when keys are missing) ── */}
       <EnvBanner />
 
       {/* ── 7. Page content ── */}
@@ -263,18 +246,36 @@ function GovLayout({ children }) {
 // ── App root ──────────────────────────────────────────────────
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={<GovLayout><Home /></GovLayout>}
-        />
-        <Route
-          path="/dashboard"
-          element={<GovLayout><OfficerDashboard /></GovLayout>}
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* ── Public portal routes (GovLayout) ── */}
+          <Route path="/"         element={<GovLayout><LandingPage /></GovLayout>} />
+          <Route path="/report"   element={<GovLayout><Home /></GovLayout>} />
+          <Route path="/dashboard" element={<GovLayout><OfficerDashboard /></GovLayout>} />
+
+          {/* ── Auth routes (no layout) ── */}
+          <Route path="/login"     element={<LoginPage />} />
+          <Route path="/register"  element={<RegisterPage />} />
+          <Route path="/admin-mc"  element={<AdminLoginPage />} />
+
+          {/* ── Protected citizen dashboard ── */}
+          <Route path="/citizen" element={
+            <ProtectedRoute role="citizen">
+              <CitizenDashboard />
+            </ProtectedRoute>
+          } />
+
+          {/* ── Protected admin dashboard ── */}
+          <Route path="/admin" element={
+            <ProtectedRoute role="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

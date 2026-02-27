@@ -43,12 +43,25 @@ export default defineConfig({
       // Workbox — pre-cache all static assets for offline support
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // SPA: serve index.html for all navigation routes (React Router handles them client-side)
+        navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/^(?!\/__)/],
       },
 
-      // Dev options — enable PWA in dev mode so you can test it
+      // Dev options — DISABLED in dev: the SW intercepts requests and breaks
+      // Firebase Google Auth popups (Cross-Origin-Opener-Policy conflict).
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
     }),
   ],
+
+  // Fix Cross-Origin-Opener-Policy so Firebase Google Sign-In popup
+  // can communicate back via window.closed without browser warnings.
+  server: {
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none',
+    },
+  },
 })

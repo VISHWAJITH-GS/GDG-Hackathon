@@ -2,28 +2,51 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── reports collection ──────────────────────────────────────────
-    // Citizens can create a report (write). Only authenticated users.
-    // Officers can read all reports (read requires auth).
-    // AI backend (Cloud Functions via ADC) has full access via IAM.
+    function getUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid))
+    }
+    function isSignedIn() {
+      return request.auth != null
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && getUserDoc().data.role == 'admin'
+    }
+    function isCitizen() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && getUserDoc().data.role == 'citizen'
+    }
+
+    match /users/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if false;
+    }
+
     match /reports/{reportId} {
-      allow create: if request.auth != null;
-      allow read:   if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if false; // Deletion only via Admin SDK
+      allow create: if isSignedIn()
+                    && request.resource.data.created_by == request.auth.uid;
+      allow read:   if isSignedIn()
+                    && (isAdmin() || resource.data.created_by == request.auth.uid);
+      allow update: if isSignedIn()
+                    && (isAdmin() || resource.data.created_by == request.auth.uid);
+      allow delete: if false;
     }
 
-    // ── daily_summary collection ────────────────────────────────────
-    // Written by Cloud Functions only. Officers can read.
     match /daily_summary/{docId} {
-      allow read:   if request.auth != null;
-      allow write:  if false; // Written by Cloud Functions (Admin SDK)
+      allow read:  if isAdmin();
+      allow write: if false;
     }
 
-    // ── predictions collection ──────────────────────────────────────
     match /predictions/{docId} {
-      allow read:   if request.auth != null;
-      allow write:  if false;
+      allow read:  if isSignedIn();
+      allow write: if false;
     }
   }
 }

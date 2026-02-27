@@ -279,18 +279,6 @@ export default function Heatmap() {
                 <StatCard label="Critical Zones" value={loading ? '—' : criticalCount} icon="🚨" accent="#DC2626" />
             </div>
 
-            {/* Error states */}
-            {mapsError && (
-                <div className="gov-alert-error mx-4 mb-3" role="alert">
-                    <strong>Maps Error:</strong> {mapsError}
-                </div>
-            )}
-            {firestoreError && (
-                <div className="gov-alert-error mx-4 mb-3" role="alert">
-                    <strong>Firestore Error:</strong> {firestoreError}
-                </div>
-            )}
-
             {/* Map container */}
             <div className="px-4 pb-4">
                 <div className="gov-card overflow-hidden relative" style={{ height: '480px', minHeight: '320px' }}>
@@ -316,21 +304,7 @@ export default function Heatmap() {
                         </div>
                     )}
 
-                    {/* No-data notice */}
-                    {mapsReady && !loading && validPoints === 0 && !mapsError && (
-                        <div
-                            className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none"
-                            style={{ background: 'rgba(245,247,250,0.85)' }}
-                        >
-                            <span className="text-4xl">🗺️</span>
-                            <p className="text-sm font-semibold" style={{ color: 'var(--color-muted)' }}>
-                                No geo-tagged reports found
-                            </p>
-                            <p className="text-xs" style={{ color: 'var(--color-muted)' }}>
-                                Reports will appear automatically when location data is available.
-                            </p>
-                        </div>
-                    )}
+
 
                     {/* Maps key missing notice */}
                     {!MAPS_CONFIGURED && (

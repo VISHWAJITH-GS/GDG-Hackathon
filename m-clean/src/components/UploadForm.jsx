@@ -85,7 +85,7 @@ function ProgressBar({ value }) {
 }
 
 // ── Main component ─────────────────────────────────────────────
-export default function UploadForm({ onSuccess }) {
+export default function UploadForm({ onSuccess, createdBy = null }) {
     // ── State ──────────────────────────────────────────────────────
     const [imageFile, setImageFile] = useState(null)
     const [preview, setPreview] = useState(null)
@@ -102,6 +102,26 @@ export default function UploadForm({ onSuccess }) {
     const [fileError, setFileError] = useState('')
     const [geoError, setGeoError] = useState('')
     const [submitError, setSubmitError] = useState('')
+
+    // ── Extra fields ───────────────────────────────────────────────
+    const [areaName,   setAreaName]   = useState('')
+    const [wardNumber, setWardNumber] = useState('')
+    const [wasteTypes, setWasteTypes] = useState([])
+
+    const WASTE_OPTIONS = [
+      'Household / Organic',
+      'Plastic Waste',
+      'Construction Debris',
+      'Biomedical / Hazardous',
+      'Electronic Waste',
+      'Liquid / Sewage',
+    ]
+
+    function toggleWasteType(type) {
+      setWasteTypes(prev =>
+        prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+      )
+    }
 
     const fileInputRef = useRef(null)
 
@@ -169,6 +189,9 @@ export default function UploadForm({ onSuccess }) {
 
         if (!imageFile) { setSubmitError('Please select an image to upload.'); return }
         if (!coords) { setSubmitError('Please capture your location before submitting.'); return }
+        if (!areaName.trim()) { setSubmitError('Please enter the area name.'); return }
+        if (!wardNumber.trim()) { setSubmitError('Please enter the ward number.'); return }
+        if (wasteTypes.length === 0) { setSubmitError('Please select at least one type of waste.'); return }
 
         try {
             // Step 1 — Upload to Firebase Storage
@@ -202,7 +225,15 @@ export default function UploadForm({ onSuccess }) {
                     latitude: coords.latitude,
                     longitude: coords.longitude,
                 },
+                area_name:   areaName.trim(),
+                ward_number: wardNumber.trim(),
+                waste_types: wasteTypes,
                 status: 'pending',
+                created_by: createdBy,
+                assigned_to: null,
+                waste_type: null,
+                severity_score: null,
+                created_at: serverTimestamp(),
                 timestamp: serverTimestamp(),
             })
 
@@ -233,6 +264,7 @@ export default function UploadForm({ onSuccess }) {
         setCoords(null); setGeoStatus('idle'); setGeoError('')
         setUploadStatus('idle'); setUploadProgress(0)
         setDocId(null); setImageUrl(null); setSubmitError('')
+        setAreaName(''); setWardNumber(''); setWasteTypes([])
     }
 
     const isUploading = ['uploading', 'saving', 'triggering'].includes(uploadStatus)
@@ -426,6 +458,77 @@ export default function UploadForm({ onSuccess }) {
                         <p className="text-xs mt-2" style={{ color: 'var(--color-muted)' }}>
                             Your browser will request GPS permission. Location is required to geotag the photograph.
                         </p>
+                    </section>
+
+                    {/* Section C — Additional Details */}
+                    <section>
+                        <h2 className="text-sm font-bold mb-3 pb-1.5 border-b flex items-center gap-2"
+                            style={{ color: 'var(--color-gov-800)', borderColor: 'var(--color-border)' }}>
+                            <span className="text-white text-xs font-bold px-1.5 py-0.5 rounded"
+                                style={{ background: 'var(--color-gov-800)' }}>C</span>
+                            Complaint Details
+                        </h2>
+
+                        <div className="flex flex-col gap-4">
+                            {/* Area Name */}
+                            <div>
+                                <label htmlFor="area-name" className="field-label">
+                                    Area Name <span className="req">*</span>
+                                </label>
+                                <input
+                                    id="area-name"
+                                    type="text"
+                                    value={areaName}
+                                    onChange={e => setAreaName(e.target.value)}
+                                    placeholder="e.g. Anna Nagar, Madurai"
+                                    disabled={isUploading}
+                                    className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gov-600)] transition"
+                                    style={{ borderColor: 'var(--color-border-strong)' }}
+                                />
+                            </div>
+
+                            {/* Ward Number */}
+                            <div>
+                                <label htmlFor="ward-number" className="field-label">
+                                    Ward Number <span className="req">*</span>
+                                </label>
+                                <input
+                                    id="ward-number"
+                                    type="text"
+                                    value={wardNumber}
+                                    onChange={e => setWardNumber(e.target.value)}
+                                    placeholder="e.g. 24"
+                                    disabled={isUploading}
+                                    className="w-full rounded border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-gov-600)] transition"
+                                    style={{ borderColor: 'var(--color-border-strong)' }}
+                                />
+                            </div>
+
+                            {/* Waste Types */}
+                            <div>
+                                <label className="field-label">
+                                    Type of Waste <span className="req">*</span>
+                                </label>
+                                <div className="flex flex-wrap gap-2 mt-1.5">
+                                    {WASTE_OPTIONS.map(type => (
+                                        <button
+                                            key={type}
+                                            type="button"
+                                            disabled={isUploading}
+                                            onClick={() => toggleWasteType(type)}
+                                            className={[
+                                                'px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+                                                wasteTypes.includes(type)
+                                                    ? 'bg-[var(--color-gov-800)] text-white border-[var(--color-gov-800)]'
+                                                    : 'bg-white text-[var(--color-gov-800)] border-[var(--color-border-strong)] hover:bg-[var(--color-gov-50)]',
+                                            ].join(' ')}
+                                        >
+                                            {type}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </section>
 
                     {/* Upload progress */}
