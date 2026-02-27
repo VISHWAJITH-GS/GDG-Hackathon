@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import Badge from '../components/Badge'
+import Heatmap from '../components/Heatmap'
 
 // ── Seed data ─────────────────────────────────────────────────
 const SEED_REPORTS = [
@@ -202,6 +203,11 @@ export default function OfficerDashboard() {
                 <StatCard label="Pending" count={counts.pending ?? 0} icon="🕐" accent="#D97706" />
                 <StatCard label="In Progress" count={counts.inprogress ?? 0} icon="🔄" accent="#1D4ED8" />
                 <StatCard label="Resolved" count={counts.resolved ?? 0} icon="✅" accent="#166534" />
+            </div>
+
+            {/* ── Heatmap ── */}
+            <div className="gov-card overflow-hidden mb-7">
+                <Heatmap />
             </div>
 
             {/* ── Filter + table card ── */}
