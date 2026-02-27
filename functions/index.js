@@ -1,296 +1,476 @@
-/**
- * M-Clean | Madurai Municipal Corporation
- * Firebase Cloud Function: analyzeWaste
- *
- * Flow:
- *  1. Receive image URL + metadata via HTTP POST
- *  2. Send image to Google Cloud Vision API for label detection
- *  3. Send Vision labels + metadata to Gemini API for structured analysis
- *  4. Validate JSON response
- *  5. Save structured result into the Firestore report document
- */
+// =============================================================================
+// functions/index.js
+// Firebase Cloud Functions — M-Clean | Madurai Municipal Corporation
+//
+// Exported functions:
+//   1. analyzeWaste        - HTTP POST: Vision → Gemini → Firestore pipeline
+//   2. calculateWardScore  - HTTP POST: Compute ward cleanliness score
+//
+// Environment variables (set in functions/.env or Firebase Secrets):
+//   GEMINI_API_KEY   – Your Google Gemini API key
+//
+// Firestore collection: reports/{reportId}
+// =============================================================================
+
+"use strict";
 
 const { onRequest } = require("firebase-functions/v2/https");
 const { setGlobalOptions } = require("firebase-functions/v2");
-const { initializeApp } = require("firebase-admin/app");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { initializeApp, getApps } = require("firebase-admin/app");
+const { getFirestore, FieldValue, Timestamp } = require("firebase-admin/firestore");
 const vision = require("@google-cloud/vision");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // ---------------------------------------------------------------------------
-// Environment variable placeholders
+// Global options — deploy to asia-south1 (closest region to Madurai)
 // ---------------------------------------------------------------------------
-// Set these in your Firebase project:
-//   firebase functions:secrets:set GEMINI_API_KEY
-//   or define them in .env / firebase.json env vars
-//
-// For local development, create a functions/.env file:
-//   GEMINI_API_KEY=your_gemini_api_key_here
-//   GCP_PROJECT_ID=your_gcp_project_id
-//   FIRESTORE_COLLECTION=reports
-// ---------------------------------------------------------------------------
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "REPLACE_WITH_YOUR_GEMINI_API_KEY";
-const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID || "REPLACE_WITH_YOUR_GCP_PROJECT_ID";
-const FIRESTORE_COLLECTION = process.env.FIRESTORE_COLLECTION || "reports";
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-pro";
+setGlobalOptions({ region: "asia-south1" });
 
 // ---------------------------------------------------------------------------
-// Global initializations
+// Firebase Admin — idempotent init (safe for hot-reloads & emulators)
 // ---------------------------------------------------------------------------
-setGlobalOptions({ region: "asia-south1" }); // Close to Madurai, India
-
-initializeApp();
-const db = getFirestore();
-const visionClient = new vision.ImageAnnotatorClient({ projectId: GCP_PROJECT_ID });
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-const VISION_MAX_LABELS = 15;
-const GEMINI_TEMPERATURE = 0.2; // Low temperature → more deterministic, structured output
-
-const GEMINI_PROMPT_TEMPLATE = (labels, metadata) => `
-You are an AI sanitation analyst for Madurai Municipal Corporation.
-Analyze the following waste report data and return strictly valid JSON with no markdown, no code blocks, no extra text — just raw JSON.
-
-Vision API detected labels: ${labels}
-
-Report metadata:
-- Location: Latitude ${metadata.latitude ?? "unknown"}, Longitude ${metadata.longitude ?? "unknown"}
-- Timestamp: ${metadata.timestamp ?? new Date().toISOString()}
-- Reporter notes: ${metadata.notes ?? "None provided"}
-- Area description: ${metadata.area_description ?? "Not provided"}
-
-Return ONLY this JSON structure (fill in all fields):
-{
-  "waste_type": "string — e.g. 'Household Garbage', 'Construction Debris', 'Biomedical Waste'",
-  "severity_score": number between 1 (minor) and 10 (critical),
-  "dumping_pattern": "string — e.g. 'One-time dump', 'Repeated illegal dumping', 'Gradual accumulation'",
-  "area_type_guess": "string — e.g. 'Residential street', 'Market area', 'Roadside', 'Open plot'",
-  "urgency_level": "string — one of: 'Low', 'Medium', 'High', 'Critical'",
-  "confidence": number between 0.0 and 1.0 representing confidence in the analysis
+if (!getApps().length) {
+  initializeApp();
 }
-`.trim();
+
+const db = getFirestore();
 
 // ---------------------------------------------------------------------------
-// Helper: Call Google Vision API for label detection
+// Environment variables
 // ---------------------------------------------------------------------------
-async function detectLabelsFromUrl(imageUrl) {
-    const [result] = await visionClient.labelDetection({
-        image: { source: { imageUri: imageUrl } },
-    });
+// For local dev: create functions/.env with:
+//   GEMINI_API_KEY=your_key_here
+// For production: firebase functions:secrets:set GEMINI_API_KEY
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "YOUR_GEMINI_API_KEY";
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const REPORTS_COL = process.env.FIRESTORE_COLLECTION || "reports";
 
-    const labels = result.labelAnnotations || [];
+// ---------------------------------------------------------------------------
+// Clients
+// ---------------------------------------------------------------------------
 
-    if (labels.length === 0) {
-        throw new Error("Vision API returned no labels for the provided image.");
+// Vision — uses Application Default Credentials automatically in Cloud Functions.
+// For local dev: set GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+const visionClient = new vision.ImageAnnotatorClient();
+
+// Gemini
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const geminiModel = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+// =============================================================================
+// SECTION 1 — analyzeWaste helpers
+// =============================================================================
+
+/**
+ * Calls Vision API label detection on a public image URL.
+ * Returns top-15 labels sorted by confidence descending.
+ *
+ * @param {string} imageUrl
+ * @returns {Promise<string[]>}
+ */
+async function detectLabels(imageUrl) {
+  const [result] = await visionClient.labelDetection({
+    image: { source: { imageUri: imageUrl } },
+  });
+
+  const labels = result.labelAnnotations ?? [];
+
+  if (labels.length === 0) {
+    throw new Error("Vision API returned no labels for the provided image.");
+  }
+
+  return labels
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, 15)
+    .map((l) => `${l.description} (confidence: ${((l.score ?? 0) * 100).toFixed(1)}%)`);
+}
+
+/**
+ * Builds the Gemini prompt with Vision labels and caller metadata.
+ *
+ * @param {string[]}            labels
+ * @param {Record<string, any>} metadata
+ * @returns {string}
+ */
+function buildGeminiPrompt(labels, metadata) {
+  const labelText = labels.length ? labels.join(", ") : "No labels detected";
+  const metaText = Object.keys(metadata).length
+    ? JSON.stringify(metadata, null, 2)
+    : "No additional metadata provided";
+
+  return `You are an AI sanitation analyst for Madurai Municipal Corporation.
+Analyze the following waste image data and return STRICTLY valid JSON (no markdown, no code fences, no extra text):
+
+Vision API detected labels: ${labelText}
+
+Additional metadata:
+${metaText}
+
+Return exactly this JSON structure:
+{
+  "waste_type": "<string — e.g. Household Garbage, Construction Debris, Biomedical Waste>",
+  "severity_score": <integer 1–10, where 1 is minimal and 10 is critical>,
+  "dumping_pattern": "<string — e.g. One-time dump, Repeated illegal dumping, Scattered>",
+  "area_type_guess": "<string — e.g. Residential street, Market area, Roadside, Open plot>",
+  "urgency_level": "<one of: low | medium | high | critical>",
+  "confidence": <float 0.0–1.0 representing your confidence in this analysis>
+}`;
+}
+
+/**
+ * Sends a prompt to Gemini and returns a validated waste-analysis object.
+ *
+ * @param {string} prompt
+ * @returns {Promise<Object>}
+ */
+async function callGeminiAndValidate(prompt) {
+  const result = await geminiModel.generateContent(prompt);
+  const responseText = result.response.text().trim();
+
+  // Strip accidental markdown fences
+  const cleaned = responseText
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error(`Gemini returned non-JSON output. Raw: ${responseText}`);
+  }
+
+  // ── Field & type validation ──────────────────────────────────────────────
+  const requiredFields = {
+    waste_type: "string",
+    severity_score: "number",
+    dumping_pattern: "string",
+    area_type_guess: "string",
+    urgency_level: "string",
+    confidence: "number",
+  };
+
+  for (const [field, expectedType] of Object.entries(requiredFields)) {
+    if (!(field in parsed)) {
+      throw new Error(`Gemini response missing required field: "${field}"`);
+    }
+    // eslint-disable-next-line valid-typeof
+    if (typeof parsed[field] !== expectedType) {
+      throw new Error(`Field "${field}" expected ${expectedType}, got ${typeof parsed[field]}`);
+    }
+  }
+
+  const validUrgency = new Set(["low", "medium", "high", "critical"]);
+  if (!validUrgency.has(parsed.urgency_level)) {
+    throw new Error(
+      `Invalid urgency_level "${parsed.urgency_level}". Must be one of: ${[...validUrgency].join(", ")}`
+    );
+  }
+  if (parsed.severity_score < 1 || parsed.severity_score > 10) {
+    throw new Error(`severity_score ${parsed.severity_score} out of range [1, 10]`);
+  }
+  if (parsed.confidence < 0 || parsed.confidence > 1) {
+    throw new Error(`confidence ${parsed.confidence} out of range [0.0, 1.0]`);
+  }
+
+  return {
+    waste_type: String(parsed.waste_type),
+    severity_score: Number(parsed.severity_score),
+    dumping_pattern: String(parsed.dumping_pattern),
+    area_type_guess: String(parsed.area_type_guess),
+    urgency_level: String(parsed.urgency_level),
+    confidence: Number(parsed.confidence),
+  };
+}
+
+/**
+ * Persists the AI analysis alongside source data into Firestore.
+ * Uses `merge: true` so pre-existing reporter fields are never overwritten.
+ *
+ * @param {string|null}         reportId
+ * @param {string}              imageUrl
+ * @param {Record<string,any>}  metadata
+ * @param {Object}              analysis
+ * @param {string[]}            visionLabels
+ * @returns {Promise<string>}   Firestore document ID
+ */
+async function persistAnalysis(reportId, imageUrl, metadata, analysis, visionLabels) {
+  const col = db.collection(REPORTS_COL);
+  const docRef = reportId ? col.doc(reportId) : col.doc();
+
+  await docRef.set(
+    {
+      ai_analysis: {
+        ...analysis,
+        vision_labels: visionLabels,
+        analyzed_at: FieldValue.serverTimestamp(),
+      },
+      image_url: imageUrl,
+      status: analysis.urgency_level === "critical" ? "flagged" : "analyzed",
+      metadata: {
+        ...metadata,
+        processed_at: FieldValue.serverTimestamp(),
+      },
+      updated_at: FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return docRef.id;
+}
+
+// =============================================================================
+// SECTION 2 — calculateWardScore helpers
+// =============================================================================
+
+/**
+ * Rating bands for ward cleanliness scores.
+ * Evaluated top-down; first matching band wins.
+ */
+const RATING_BANDS = [
+  { min: 80, max: 100, category: "Clean" },
+  { min: 50, max: 79, category: "Moderate" },
+  { min: 0, max: 49, category: "Critical" },
+];
+
+/**
+ * Derives a rating category string from a numeric ward score.
+ *
+ * @param {number} score  Clamped score in [0, 100].
+ * @returns {string}      "Clean" | "Moderate" | "Critical"
+ */
+function getRatingCategory(score) {
+  for (const band of RATING_BANDS) {
+    if (score >= band.min && score <= band.max) {
+      return band.category;
+    }
+  }
+  return "Critical"; // safety fallback
+}
+
+/**
+ * Core scoring algorithm — exported as a plain function so it can be unit-tested
+ * independently from the HTTP layer.
+ *
+ * Formula:
+ *   raw_score = 100 - (total_reports × 2) - (high_severity_reports × 3)
+ *   ward_cleanliness_score = clamp(raw_score, 0, 100)
+ *
+ * @param {number} total_reports         Total reports filed for the ward.
+ * @param {number} high_severity_reports Reports with severity_score ≥ 7 (or urgency high/critical).
+ * @returns {{ ward_cleanliness_score: number, rating_category: string }}
+ */
+function calculateWardScore({ total_reports, high_severity_reports }) {
+  // ── Input coercion & sanity checks ──────────────────────────────────────
+  const total = Math.max(0, Math.floor(Number(total_reports) || 0));
+  const severe = Math.max(0, Math.floor(Number(high_severity_reports) || 0));
+
+  if (severe > total) {
+    throw new Error(
+      `high_severity_reports (${severe}) cannot exceed total_reports (${total})`
+    );
+  }
+
+  // ── Formula ─────────────────────────────────────────────────────────────
+  const raw = 100 - (total * 2) - (severe * 3);
+  const score = Math.min(100, Math.max(0, raw));  // clamp to [0, 100]
+
+  return {
+    ward_cleanliness_score: score,
+    rating_category: getRatingCategory(score),
+  };
+}
+
+// =============================================================================
+// CLOUD FUNCTION 1 — analyzeWaste
+// =============================================================================
+
+/**
+ * POST /analyzeWaste
+ *
+ * Request body:
+ * {
+ *   "imageUrl":  "https://...",    // required — public image URL
+ *   "reportId":  "docId",         // optional — Firestore doc to update
+ *   "metadata":  { … }            // optional — lat, lng, notes, etc.
+ * }
+ *
+ * Success 200:
+ * { success: true, reportId, analysis, vision_labels }
+ *
+ * Error 4xx/5xx:
+ * { success: false, error: "…" }
+ */
+exports.analyzeWaste = onRequest(
+  { timeoutSeconds: 120, memory: "512MiB", cors: true },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ success: false, error: "Method Not Allowed. Use POST." });
     }
 
-    // Return top N labels with description and score
-    return labels.slice(0, VISION_MAX_LABELS).map((label) => ({
-        description: label.description,
-        score: parseFloat((label.score ?? 0).toFixed(3)),
-    }));
-}
+    const { imageUrl, reportId = null, metadata = {} } = req.body ?? {};
 
-// ---------------------------------------------------------------------------
-// Helper: Call Gemini API with Vision labels + metadata
-// ---------------------------------------------------------------------------
-async function analyzeWithGemini(visionLabels, metadata) {
-    const model = genAI.getGenerativeModel({
-        model: GEMINI_MODEL,
-        generationConfig: {
-            temperature: GEMINI_TEMPERATURE,
-            responseMimeType: "application/json", // Force JSON-only output
-        },
-    });
+    if (!imageUrl || typeof imageUrl !== "string" || !imageUrl.startsWith("http")) {
+      return res.status(400).json({
+        success: false,
+        error: "Request body must include a valid `imageUrl` (public HTTP/HTTPS URL).",
+      });
+    }
 
-    const labelsText = visionLabels
-        .map((l) => `${l.description} (confidence: ${l.score})`)
-        .join(", ");
-
-    const prompt = GEMINI_PROMPT_TEMPLATE(labelsText, metadata);
-
-    const result = await model.generateContent(prompt);
-    const rawText = result.response.text();
-
-    return rawText;
-}
-
-// ---------------------------------------------------------------------------
-// Helper: Parse and validate Gemini JSON response
-// ---------------------------------------------------------------------------
-function parseAndValidateGeminiResponse(rawText) {
-    let parsed;
-
-    // Strip any accidental markdown code fences (safety net)
-    const cleaned = rawText
-        .replace(/^```json\s*/i, "")
-        .replace(/^```\s*/i, "")
-        .replace(/```$/i, "")
-        .trim();
+    console.info(`[analyzeWaste] START — reportId: ${reportId} | image: ${imageUrl}`);
 
     try {
-        parsed = JSON.parse(cleaned);
-    } catch (err) {
-        throw new Error(`Gemini returned invalid JSON. Raw response: ${rawText}. Parse error: ${err.message}`);
+      // Step 1 — Vision
+      console.info("[analyzeWaste] Step 1: Vision label detection...");
+      const visionLabels = await detectLabels(imageUrl);
+      console.info(`[analyzeWaste] Labels: ${visionLabels.join(", ")}`);
+
+      // Step 2 — Build prompt
+      const prompt = buildGeminiPrompt(visionLabels, metadata);
+
+      // Step 3 — Gemini
+      console.info("[analyzeWaste] Step 2: Gemini analysis...");
+      const analysis = await callGeminiAndValidate(prompt);
+      console.info("[analyzeWaste] Analysis:", JSON.stringify(analysis));
+
+      // Step 4 — Firestore
+      console.info("[analyzeWaste] Step 3: Persisting to Firestore...");
+      const savedId = await persistAnalysis(reportId, imageUrl, metadata, analysis, visionLabels);
+      console.info(`[analyzeWaste] Saved → reports/${savedId}`);
+
+      return res.status(200).json({
+        success: true,
+        reportId: savedId,
+        analysis,
+        vision_labels: visionLabels,
+        message: "Waste analysis complete and saved to Firestore.",
+      });
+    } catch (error) {
+      console.error("[analyzeWaste] ERROR:", error);
+
+      const isClientError =
+        error.message?.includes("missing required field") ||
+        error.message?.includes("out of range") ||
+        error.message?.includes("Invalid urgency_level") ||
+        error.message?.includes("non-JSON");
+
+      return res.status(isClientError ? 422 : 500).json({
+        success: false,
+        error: error.message || "Internal server error during waste analysis.",
+      });
+    }
+  }
+);
+
+// =============================================================================
+// CLOUD FUNCTION 2 — calculateWardScore
+// =============================================================================
+
+/**
+ * POST /calculateWardScore
+ *
+ * Computes a cleanliness score for a municipal ward based on report volumes.
+ *
+ * Formula:
+ *   score = 100 − (total_reports × 2) − (high_severity_reports × 3)
+ *   score is clamped to [0, 100]
+ *
+ * Request body:
+ * {
+ *   "ward_id":               "WARD-07",   // optional — echoed back in response
+ *   "total_reports":         15,           // required — ≥ 0 integer
+ *   "high_severity_reports": 4            // required — ≥ 0, ≤ total_reports
+ * }
+ *
+ * Success 200:
+ * {
+ *   "success": true,
+ *   "ward_id": "WARD-07",
+ *   "total_reports": 15,
+ *   "high_severity_reports": 4,
+ *   "ward_cleanliness_score": 58,
+ *   "rating_category": "Moderate"
+ * }
+ *
+ * Rating bands:
+ *   80 – 100 → "Clean"
+ *   50 –  79 → "Moderate"
+ *    0 –  49 → "Critical"
+ *
+ * Error responses:
+ *   400 — missing / invalid inputs
+ *   422 — business-rule violation (severe > total)
+ *   500 — unexpected server error
+ */
+exports.calculateWardScore = onRequest(
+  { timeoutSeconds: 30, memory: "256MiB", cors: true },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ success: false, error: "Method Not Allowed. Use POST." });
     }
 
-    // Required field validation
-    const requiredFields = [
-        "waste_type",
-        "severity_score",
-        "dumping_pattern",
-        "area_type_guess",
-        "urgency_level",
-        "confidence",
-    ];
+    const {
+      ward_id = null,
+      total_reports,
+      high_severity_reports,
+    } = req.body ?? {};
 
-    for (const field of requiredFields) {
-        if (parsed[field] === undefined || parsed[field] === null) {
-            throw new Error(`Gemini response missing required field: "${field}". Raw: ${rawText}`);
-        }
+    // ── Input presence validation ──────────────────────────────────────────
+    if (total_reports === undefined || total_reports === null) {
+      return res.status(400).json({
+        success: false,
+        error: "`total_reports` is required in the request body.",
+      });
+    }
+    if (high_severity_reports === undefined || high_severity_reports === null) {
+      return res.status(400).json({
+        success: false,
+        error: "`high_severity_reports` is required in the request body.",
+      });
     }
 
-    // Type & range validation
-    if (typeof parsed.severity_score !== "number" || parsed.severity_score < 1 || parsed.severity_score > 10) {
-        throw new Error(`severity_score must be a number between 1–10. Got: ${parsed.severity_score}`);
+    // ── Numeric type validation ────────────────────────────────────────────
+    if (isNaN(Number(total_reports)) || Number(total_reports) < 0) {
+      return res.status(400).json({
+        success: false,
+        error: "`total_reports` must be a non-negative number.",
+      });
+    }
+    if (isNaN(Number(high_severity_reports)) || Number(high_severity_reports) < 0) {
+      return res.status(400).json({
+        success: false,
+        error: "`high_severity_reports` must be a non-negative number.",
+      });
     }
 
-    if (typeof parsed.confidence !== "number" || parsed.confidence < 0 || parsed.confidence > 1) {
-        throw new Error(`confidence must be a number between 0.0–1.0. Got: ${parsed.confidence}`);
-    }
-
-    const validUrgencyLevels = ["Low", "Medium", "High", "Critical"];
-    if (!validUrgencyLevels.includes(parsed.urgency_level)) {
-        throw new Error(`urgency_level must be one of ${validUrgencyLevels.join(", ")}. Got: ${parsed.urgency_level}`);
-    }
-
-    return {
-        waste_type: String(parsed.waste_type),
-        severity_score: Number(parsed.severity_score),
-        dumping_pattern: String(parsed.dumping_pattern),
-        area_type_guess: String(parsed.area_type_guess),
-        urgency_level: String(parsed.urgency_level),
-        confidence: Number(parsed.confidence),
-    };
-}
-
-// ---------------------------------------------------------------------------
-// Helper: Save AI analysis result into a Firestore report document
-// ---------------------------------------------------------------------------
-async function saveAnalysisToFirestore(reportId, analysis, visionLabels, imageUrl, metadata) {
-    const docRef = db.collection(FIRESTORE_COLLECTION).doc(reportId);
-
-    // Merge AI analysis into existing report document (non-destructive update)
-    await docRef.set(
-        {
-            ai_analysis: {
-                ...analysis,
-                vision_labels: visionLabels,
-                analyzed_at: FieldValue.serverTimestamp(),
-            },
-            status: analysis.urgency_level === "Critical" ? "flagged" : "analyzed",
-            image_url: imageUrl,
-            metadata: {
-                ...metadata,
-                processed_at: FieldValue.serverTimestamp(),
-            },
-            updated_at: FieldValue.serverTimestamp(),
-        },
-        { merge: true } // Preserve any existing fields (e.g. reporter info)
+    console.info(
+      `[calculateWardScore] ward_id=${ward_id} total=${total_reports} high_severity=${high_severity_reports}`
     );
 
-    return docRef.id;
-}
+    try {
+      const result = calculateWardScore({ total_reports, high_severity_reports });
 
-// ---------------------------------------------------------------------------
-// Main Cloud Function: analyzeWaste
-// ---------------------------------------------------------------------------
-exports.analyzeWaste = onRequest(
-    {
-        timeoutSeconds: 120,       // Vision + Gemini calls can take time
-        memory: "512MiB",
-        cors: true,                // Allow calls from the frontend PWA
-    },
-    async (req, res) => {
-        // Only accept POST
-        if (req.method !== "POST") {
-            return res.status(405).json({ success: false, error: "Method Not Allowed. Use POST." });
-        }
+      return res.status(200).json({
+        success: true,
+        ward_id,
+        total_reports: Number(total_reports),
+        high_severity_reports: Number(high_severity_reports),
+        ...result,
+      });
+    } catch (error) {
+      console.error("[calculateWardScore] ERROR:", error);
 
-        const { image_url: imageUrl, report_id: reportId, metadata = {} } = req.body;
+      const isBusinessRuleError = error.message?.includes("cannot exceed");
 
-        // Input validation
-        if (!imageUrl || typeof imageUrl !== "string") {
-            return res.status(400).json({
-                success: false,
-                error: "Missing or invalid 'image_url' in request body.",
-            });
-        }
-
-        if (!reportId || typeof reportId !== "string") {
-            return res.status(400).json({
-                success: false,
-                error: "Missing or invalid 'report_id' in request body.",
-            });
-        }
-
-        console.log(`[analyzeWaste] Processing report: ${reportId} | Image: ${imageUrl}`);
-
-        try {
-            // ------------------------------------------------------------------
-            // Step 1 → Google Vision API: Label Detection
-            // ------------------------------------------------------------------
-            console.log("[analyzeWaste] Step 1: Calling Vision API...");
-            const visionLabels = await detectLabelsFromUrl(imageUrl);
-            console.log(`[analyzeWaste] Vision labels detected: ${visionLabels.map((l) => l.description).join(", ")}`);
-
-            // ------------------------------------------------------------------
-            // Step 2 → Gemini API: Structured Waste Analysis
-            // ------------------------------------------------------------------
-            console.log("[analyzeWaste] Step 2: Calling Gemini API...");
-            const rawGeminiResponse = await analyzeWithGemini(visionLabels, metadata);
-            console.log(`[analyzeWaste] Gemini raw response: ${rawGeminiResponse}`);
-
-            // ------------------------------------------------------------------
-            // Step 3 → Validate Gemini JSON
-            // ------------------------------------------------------------------
-            console.log("[analyzeWaste] Step 3: Validating Gemini JSON response...");
-            const analysis = parseAndValidateGeminiResponse(rawGeminiResponse);
-            console.log(`[analyzeWaste] Validated analysis:`, JSON.stringify(analysis));
-
-            // ------------------------------------------------------------------
-            // Step 4 → Firestore: Save structured result into report document
-            // ------------------------------------------------------------------
-            console.log(`[analyzeWaste] Step 4: Saving analysis to Firestore (report: ${reportId})...`);
-            await saveAnalysisToFirestore(reportId, analysis, visionLabels, imageUrl, metadata);
-            console.log(`[analyzeWaste] Analysis saved successfully for report: ${reportId}`);
-
-            // ------------------------------------------------------------------
-            // Response
-            // ------------------------------------------------------------------
-            return res.status(200).json({
-                success: true,
-                report_id: reportId,
-                analysis,
-                vision_labels: visionLabels,
-                message: "Waste analysis complete and saved to Firestore.",
-            });
-        } catch (error) {
-            console.error(`[analyzeWaste] ERROR for report ${reportId}:`, error);
-
-            // Differentiate between known validation errors and unexpected failures
-            const isValidationError = error.message.includes("missing required field") ||
-                error.message.includes("invalid JSON") ||
-                error.message.includes("must be a number");
-
-            return res.status(isValidationError ? 422 : 500).json({
-                success: false,
-                report_id: reportId,
-                error: error.message || "Internal server error during waste analysis.",
-            });
-        }
+      return res.status(isBusinessRuleError ? 422 : 500).json({
+        success: false,
+        error: error.message || "Internal server error during score calculation.",
+      });
     }
+  }
 );
+
+// =============================================================================
+// Named export for unit testing (calculateWardScore core logic)
+// =============================================================================
+exports._calculateWardScore = calculateWardScore;
