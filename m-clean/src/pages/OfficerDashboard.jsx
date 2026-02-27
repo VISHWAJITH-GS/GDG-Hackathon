@@ -1,295 +1,292 @@
 // src/pages/OfficerDashboard.jsx
-// ----------------------------------------------------------------
-// Officer Dashboard — Government portal style.
-// Displays grievances in an official card+table hybrid layout.
-// Status workflow: Pending → In Progress → Resolved
-// ----------------------------------------------------------------
+// ---------------------------------------------------------------
+// Officer Command Dashboard — M-Clean | Madurai Municipal Corporation
+//
+// All heavy UI is delegated to standalone components:
+//   DashboardStats, HotspotList, PredictionPanel,
+//   WorkforcePanel, ReportPanel, Heatmap
+// ---------------------------------------------------------------
 
-import { useState } from 'react'
-import Badge from '../components/Badge'
+import { useState, useEffect, useCallback } from 'react'
+
 import Heatmap from '../components/Heatmap'
+import DashboardStats from '../components/DashboardStats'
+import HotspotList from '../components/HotspotList'
+import PredictionPanel from '../components/PredictionPanel'
+import WorkforcePanel from '../components/WorkforcePanel'
+import ReportPanel from '../components/ReportPanel'
+import Toast, { useToast } from '../components/Toast'
 
-// ── Seed data ─────────────────────────────────────────────────
-const SEED_REPORTS = [
-    {
-        id: 'MCL-2026-10001',
-        location: 'MG Road, Near Public Park',
-        ward: 'Ward 07',
-        category: 'Garbage / Solid Waste',
-        description: 'Large pile of garbage dumped on the footpath blocking pedestrian access.',
-        imageUrl: null,
-        status: 'pending',
-        submittedAt: Date.now() - 1000 * 60 * 60 * 2,
-    },
-    {
-        id: 'MCL-2026-10002',
-        location: 'Sector 12 Bus Stand',
-        ward: 'Ward 12',
-        category: 'Drainage / Sewage Overflow',
-        description: 'Broken bins overflowing with waste every morning causing health hazard.',
-        imageUrl: null,
-        status: 'inprogress',
-        submittedAt: Date.now() - 1000 * 60 * 60 * 24,
-    },
-    {
-        id: 'MCL-2026-10003',
-        location: 'Gandhi Nagar, Block C',
-        ward: 'Ward 03',
-        category: 'Stagnant Water / Waterlogging',
-        description: 'Stagnant water and waste accumulation near the drainage channel.',
-        imageUrl: null,
-        status: 'pending',
-        submittedAt: Date.now() - 1000 * 60 * 30,
-    },
-    {
-        id: 'MCL-2026-10004',
-        location: 'Old Market Street',
-        ward: 'Ward 05',
-        category: 'Illegal Dumping',
-        description: 'Vegetable vendors leaving organic waste on the road every evening.',
-        imageUrl: null,
-        status: 'resolved',
-        submittedAt: Date.now() - 1000 * 60 * 60 * 48,
-    },
-    {
-        id: 'MCL-2026-10005',
-        location: 'Lake View Road',
-        ward: 'Ward 09',
-        category: 'Illegal Dumping',
-        description: 'Illegal dumping of construction debris near the lake shore.',
-        imageUrl: null,
-        status: 'pending',
-        submittedAt: Date.now() - 1000 * 60 * 10,
-    },
-]
+// ── Cloud Function config ───────────────────────────────────────
+const FUNCTIONS_BASE = import.meta.env.VITE_FUNCTIONS_BASE_URL ?? ''
+const NUM_WORKERS = 25
+const NUM_TRUCKS = 8
 
-const FILTERS = [
-    { key: 'all', label: 'All Complaints' },
-    { key: 'pending', label: 'Pending' },
-    { key: 'inprogress', label: 'In Progress' },
-    { key: 'resolved', label: 'Resolved' },
-]
-
-const NEXT_STATUS = {
-    pending: 'inprogress',
-    inprogress: 'resolved',
-}
-
-const NEXT_LABEL = {
-    pending: 'Mark In Progress',
-    inprogress: 'Mark Resolved',
-}
-
-// Format date to Indian standard
-function fmtDate(ts) {
-    return new Date(ts).toLocaleDateString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric',
+// ── Shared fetch helper ─────────────────────────────────────────
+async function callFn(name, body = {}) {
+    const res = await fetch(`${FUNCTIONS_BASE}/${name}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
     })
-}
-function fmtTime(ts) {
-    return new Date(ts).toLocaleTimeString('en-IN', {
-        hour: '2-digit', minute: '2-digit',
-    })
+    const json = await res.json()
+    if (!json.success) throw new Error(json.error || `${name} failed (HTTP ${res.status})`)
+    return json
 }
 
-// ── Stat card ─────────────────────────────────────────────────
-function StatCard({ label, count, icon, accent }) {
+// ── Environment check ───────────────────────────────────────────
+function EnvWarning() {
+    const missing = !FUNCTIONS_BASE || FUNCTIONS_BASE.includes('YOUR_PROJECT_ID')
+    if (!missing) return null
     return (
         <div
-            className="stat-card flex items-center gap-4"
-            style={{ borderTopColor: accent }}
+            className="rounded-lg px-4 py-3 text-xs flex items-start gap-2 mb-4"
+            style={{
+                background: '#fef3c7',
+                border: '1px solid #fcd34d',
+                borderLeft: '4px solid #f59e0b',
+                color: '#92400e',
+            }}
+            role="alert"
         >
-            <div
-                className="w-11 h-11 rounded flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: `${accent}18` }}
-            >
-                {icon}
-            </div>
-            <div>
-                <p className="text-2xl font-bold text-[var(--color-gov-900)]">{count}</p>
-                <p className="text-xs text-[var(--color-muted)] font-medium mt-0.5">{label}</p>
-            </div>
+            <span className="text-base flex-shrink-0">⚠️</span>
+            <span>
+                <strong>VITE_FUNCTIONS_BASE_URL</strong> is not configured.
+                Set it in <code className="bg-amber-100 px-1 rounded">.env</code> to enable the dashboard data.
+                Format: <code className="bg-amber-100 px-1 rounded">https://asia-south1-PROJECT_ID.cloudfunctions.net</code>
+            </span>
         </div>
     )
 }
 
-// ── Row component ─────────────────────────────────────────────
-function GrievanceRow({ report, onStatusChange, idx }) {
-    const { id, location, ward, category, status, submittedAt } = report
-    return (
-        <tr className={idx % 2 === 0 ? 'bg-white' : 'bg-[#F8FAFC]'}>
-            {/* Ref # */}
-            <td className="px-4 py-3 text-xs font-mono text-[var(--color-gov-700)] whitespace-nowrap">
-                {id}
-            </td>
-            {/* Location */}
-            <td className="px-4 py-3 text-sm">
-                <p className="font-semibold text-[var(--color-text)]">{location}</p>
-                <p className="text-xs text-[var(--color-muted)]">{ward}</p>
-            </td>
-            {/* Category */}
-            <td className="px-4 py-3 text-xs text-[var(--color-text-soft)] hidden sm:table-cell">
-                {category}
-            </td>
-            {/* Date */}
-            <td className="px-4 py-3 text-xs text-[var(--color-muted)] whitespace-nowrap hidden md:table-cell">
-                <p>{fmtDate(submittedAt)}</p>
-                <p>{fmtTime(submittedAt)}</p>
-            </td>
-            {/* Status */}
-            <td className="px-4 py-3">
-                <Badge status={status} />
-            </td>
-            {/* Action */}
-            <td className="px-4 py-3 text-right">
-                {status !== 'resolved' ? (
-                    <button
-                        onClick={() => onStatusChange(id, NEXT_STATUS[status])}
-                        className="btn-gov-outline text-xs px-3 py-1.5"
-                    >
-                        {NEXT_LABEL[status]}
-                    </button>
-                ) : (
-                    <span className="text-xs text-[var(--color-tri-green)] font-semibold">✔ Closed</span>
-                )}
-            </td>
-        </tr>
-    )
-}
-
-// ── Dashboard page ────────────────────────────────────────────
+// ── Main page ───────────────────────────────────────────────────
 export default function OfficerDashboard() {
-    const [reports, setReports] = useState(SEED_REPORTS)
-    const [activeFilter, setActiveFilter] = useState('all')
 
-    const counts = reports.reduce((acc, r) => {
-        acc[r.status] = (acc[r.status] ?? 0) + 1
-        return acc
-    }, {})
+    // ── Data ────────────────────────────────────────────────────────
+    const [score, setScore] = useState(null)       // { ward_cleanliness_score, rating_category }
+    const [hotspots, setHotspots] = useState(null)       // full detectHotspots response
+    const [prediction, setPrediction] = useState(null)       // full predictGarbage response
+    const [workforce, setWorkforce] = useState(null)       // full allocateWorkforce response
 
-    const handleStatusChange = (id, newStatus) => {
-        setReports((prev) =>
-            prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
-        )
-        // TODO: await updateDoc(doc(db, 'reports', id), { status: newStatus })
-    }
+    // ── Loading ──────────────────────────────────────────────────────
+    const [loadScore, setLoadScore] = useState(false)
+    const [loadHotspots, setLoadHotspots] = useState(false)
+    const [loadPrediction, setLoadPrediction] = useState(false)
+    const [loadWorkforce, setLoadWorkforce] = useState(false)
 
-    const visible =
-        activeFilter === 'all'
-            ? reports
-            : reports.filter((r) => r.status === activeFilter)
+    // ── Errors ───────────────────────────────────────────────────────
+    const [errScore, setErrScore] = useState(null)
+    const [errHotspots, setErrHotspots] = useState(null)
+    const [errPrediction, setErrPrediction] = useState(null)
+    const [errWorkforce, setErrWorkforce] = useState(null)
 
+    const { toast, showToast, hideToast } = useToast()
+
+    const today = new Date().toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata',
+    })
+
+    // ── Fetch helpers ────────────────────────────────────────────────
+
+    const fetchHotspots = useCallback(async () => {
+        setLoadHotspots(true); setErrHotspots(null)
+        try {
+            const data = await callFn('detectHotspots', { days: 7 })
+            setHotspots(data)
+            return data
+        } catch (e) {
+            setErrHotspots(e.message)
+            return null
+        } finally {
+            setLoadHotspots(false)
+        }
+    }, [])
+
+    const fetchScore = useCallback(async (total, highSeverity) => {
+        setLoadScore(true); setErrScore(null)
+        try {
+            const data = await callFn('calculateWardScore', {
+                total_reports: total,
+                high_severity_reports: highSeverity,
+            })
+            setScore(data)
+        } catch (e) {
+            setErrScore(e.message)
+        } finally {
+            setLoadScore(false)
+        }
+    }, [])
+
+    const fetchPrediction = useCallback(async () => {
+        setLoadPrediction(true); setErrPrediction(null)
+        try {
+            const data = await callFn('predictGarbage', { days: 7 })
+            setPrediction(data)
+        } catch (e) {
+            setErrPrediction(e.message)
+        } finally {
+            setLoadPrediction(false)
+        }
+    }, [])
+
+    const fetchWorkforce = useCallback(async (zones) => {
+        if (!zones || zones.length === 0) { setWorkforce(null); return }
+        setLoadWorkforce(true); setErrWorkforce(null)
+        try {
+            const data = await callFn('allocateWorkforce', {
+                hotspots: zones,
+                num_workers: NUM_WORKERS,
+                num_trucks: NUM_TRUCKS,
+            })
+            setWorkforce(data)
+        } catch (e) {
+            setErrWorkforce(e.message)
+        } finally {
+            setLoadWorkforce(false)
+        }
+    }, [])
+
+    // ── Full refresh (all sections) ──────────────────────────────────
+    const refreshAll = useCallback(async () => {
+        const [hotspotsData] = await Promise.all([
+            fetchHotspots(),
+            fetchPrediction(),
+        ])
+
+        if (hotspotsData) {
+            const spots = hotspotsData.top_hotspots ?? []
+            const total = spots.reduce((s, h) => s + (h.report_count ?? 1), 0)
+            const highSev = spots.filter((h) => (h.avg_severity ?? h.severity_score ?? 0) >= 7).length
+            await Promise.all([
+                fetchScore(total, highSev),
+                fetchWorkforce(spots),
+            ])
+        } else {
+            fetchScore(0, 0)
+        }
+    }, [fetchHotspots, fetchPrediction, fetchScore, fetchWorkforce])
+
+    // ── Mount ────────────────────────────────────────────────────────
+    useEffect(() => { refreshAll() }, [refreshAll])
+
+    // ── Derived values ───────────────────────────────────────────────
+    const cleanScore = score?.ward_cleanliness_score ?? 0
+    const ratingCat = score?.rating_category ?? '—'
+    const spots = hotspots?.top_hotspots ?? []
+    const dumpZones = hotspots?.repeated_dumping_zones ?? []
+    const patternExpl = hotspots?.pattern_explanation ?? ''
+    const peakTime = hotspots?.peak_waste_time ?? ''
+
+    const criticalCount = spots.filter(
+        (h) => String(h.risk_level ?? h.urgency_level ?? '').toLowerCase() === 'critical'
+    ).length
+
+    // ── Render ───────────────────────────────────────────────────────
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
-            {/* Page meta header */}
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            {/* ── Page header ── */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
                 <div>
-                    <h1 className="text-xl font-bold text-[var(--color-gov-900)]">
-                        Grievance Management Dashboard
+                    <h1 className="text-xl font-bold" style={{ color: 'var(--color-gov-900)' }}>
+                        Officer Command Dashboard
                     </h1>
-                    <p className="text-sm text-[var(--color-muted)] mt-0.5">
-                        Sanitation &amp; Cleanliness Complaints &mdash; Logged till {fmtDate(Date.now())}
+                    <p className="text-sm mt-0.5" style={{ color: 'var(--color-muted)' }}>
+                        Sanitation Intelligence Overview · {today}
                     </p>
                 </div>
-                <button className="btn-gov self-start sm:self-auto text-sm">
-                    ⬇ Export Report
+
+                <button
+                    onClick={async () => {
+                        await refreshAll()
+                        showToast('Dashboard data refreshed.', 'success')
+                    }}
+                    disabled={loadHotspots || loadPrediction || loadScore || loadWorkforce}
+                    className="btn-gov-outline self-start sm:self-auto flex items-center gap-2 text-sm"
+                    id="refresh-dashboard-btn"
+                >
+                    {(loadHotspots || loadPrediction) ? (
+                        <span className="w-4 h-4 rounded-full border-2 animate-spin"
+                            style={{ borderColor: 'var(--color-gov-100)', borderTopColor: 'var(--color-gov-700)' }} />
+                    ) : '🔄'}
+                    Refresh Data
                 </button>
             </div>
 
-            {/* ── Statistics ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-7">
-                <StatCard label="Total Complaints" count={reports.length} icon="📋" accent="#104080" />
-                <StatCard label="Pending" count={counts.pending ?? 0} icon="🕐" accent="#D97706" />
-                <StatCard label="In Progress" count={counts.inprogress ?? 0} icon="🔄" accent="#1D4ED8" />
-                <StatCard label="Resolved" count={counts.resolved ?? 0} icon="✅" accent="#166534" />
-            </div>
+            {/* ── Env warning ── */}
+            <EnvWarning />
 
-            {/* ── Heatmap ── */}
-            <div className="gov-card overflow-hidden mb-7">
+            {/* ── SECTION 1: Stats bar ── */}
+            <DashboardStats
+                score={cleanScore}
+                rating={ratingCat}
+                hotspotCount={spots.length}
+                criticalCount={criticalCount}
+                riskProbability={prediction?.risk_probability ?? null}
+                loadingScore={loadScore}
+                loadingHotspots={loadHotspots}
+                loadingPrediction={loadPrediction}
+            />
+
+            {/* ── SECTION 2: Heatmap ── */}
+            <div className="gov-card overflow-hidden">
                 <Heatmap />
             </div>
 
-            {/* ── Filter + table card ── */}
-            <div className="gov-card overflow-hidden">
-                {/* Card header with filter tabs */}
-                <div className="flex items-center justify-between flex-wrap gap-2
-                        bg-[var(--color-gov-800)] px-5 py-3">
-                    <p className="text-white font-semibold text-sm tracking-wide">
-                        Grievance Register
-                    </p>
-                    <div className="flex gap-1 flex-wrap">
-                        {FILTERS.map(({ key, label }) => (
-                            <button
-                                key={key}
-                                onClick={() => setActiveFilter(key)}
-                                className={[
-                                    'px-3 py-1 rounded text-xs font-semibold transition-colors duration-150',
-                                    activeFilter === key
-                                        ? 'bg-[var(--color-saffron)] text-white'
-                                        : 'bg-white/10 text-blue-100 hover:bg-white/20',
-                                ].join(' ')}
-                            >
-                                {label}
-                                {key !== 'all' && counts[key]
-                                    ? <span className="ml-1 opacity-75">({counts[key]})</span>
-                                    : null}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Table */}
-                {visible.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-                        <span className="text-4xl">📭</span>
-                        <p className="text-[var(--color-muted)] text-sm">
-                            No complaints found under this filter.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="border-b border-[var(--color-border)] bg-[var(--color-gov-50)]">
-                                    {['Reference No.', 'Location / Ward', 'Category', 'Date & Time', 'Status', 'Action'].map((h) => (
-                                        <th
-                                            key={h}
-                                            className="px-4 py-2.5 text-xs font-bold uppercase tracking-wider
-                                 text-[var(--color-gov-800)]"
-                                        >
-                                            {h}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-[var(--color-border)]">
-                                {visible.map((report, idx) => (
-                                    <GrievanceRow
-                                        key={report.id}
-                                        report={report}
-                                        onStatusChange={handleStatusChange}
-                                        idx={idx}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-
-                {/* Table footer */}
-                <div className="bg-[var(--color-gov-50)] border-t border-[var(--color-border)]
-                        px-5 py-2.5 flex items-center justify-between text-xs text-[var(--color-muted)]">
-                    <span>Showing {visible.length} of {reports.length} records</span>
-                    <span>Last refreshed: {fmtDate(Date.now())}, {fmtTime(Date.now())}</span>
-                </div>
+            {/* ── SECTION 3 + 4: Hotspots & Predictions (2-col) ── */}
+            <div className="grid lg:grid-cols-2 gap-6">
+                <HotspotList
+                    hotspots={spots}
+                    dumpingZones={dumpZones}
+                    patternExplanation={patternExpl}
+                    peakWasteTime={peakTime}
+                    loading={loadHotspots}
+                    error={errHotspots}
+                    onRetry={fetchHotspots}
+                />
+                <PredictionPanel
+                    prediction={prediction}
+                    loading={loadPrediction}
+                    error={errPrediction}
+                    onRetry={fetchPrediction}
+                />
             </div>
 
-            {/* Disclaimer */}
-            <p className="text-xs text-[var(--color-muted)] mt-4 text-center">
-                This portal is for authorised government officers only. Unauthorised access is a
-                punishable offence under the Information Technology Act, 2000.
+            {/* ── SECTION 5: Workforce ── */}
+            <WorkforcePanel
+                workforce={workforce}
+                numWorkers={NUM_WORKERS}
+                numTrucks={NUM_TRUCKS}
+                loading={loadWorkforce}
+                error={errWorkforce}
+            />
+
+            {/* ── SECTION 6: Score error (if any) ── */}
+            {!loadScore && errScore && (
+                <div className="gov-alert-error text-sm">
+                    <strong>Score Calculation Error:</strong> {errScore}
+                </div>
+            )}
+
+            {/* ── SECTION 7: Daily Report ── */}
+            <ReportPanel
+                hotspots={spots}
+                cleanlinessScore={cleanScore}
+                ratingCategory={ratingCat}
+                prediction={prediction}
+                functionsBase={FUNCTIONS_BASE}
+                onReportGenerated={() => showToast('Daily report generated successfully!', 'success')}
+            />
+
+            {/* ── Disclaimer ── */}
+            <p className="text-xs text-center pb-2" style={{ color: 'var(--color-muted)' }}>
+                This dashboard is for authorised officers only. AI predictions are advisory.
+                All decisions must be verified by a field supervisor before action.
             </p>
+
+            {/* ── Toast ── */}
+            <Toast {...toast} onClose={hideToast} />
+
         </div>
     )
 }

@@ -7,6 +7,8 @@
 //   2. calculateWardScore  - HTTP POST: Compute ward cleanliness score
 //   3. detectHotspots      - HTTP POST: 7-day Firestore reports → Gemini hotspot analysis
 //   4. predictGarbage      - HTTP POST: 7-day data + weather/festival → Gemini risk prediction
+//   5. allocateWorkforce   - HTTP POST: Hotspots + resources → deterministic workforce plan
+//   6. generateDailyReport - HTTP POST: Hotspots + score + predictions → Gemini 150-word report
 //
 // Environment variables (set in functions/.env or Firebase Secrets):
 //   GEMINI_API_KEY   – Your Google Gemini API key
@@ -1201,6 +1203,692 @@ exports.predictGarbage = onRequest(
       return res.status(isValidationError ? 422 : 500).json({
         success: false,
         error: error.message || "Internal server error during garbage prediction.",
+      });
+    }
+  }
+);
+
+// =============================================================================
+// SECTION 5 — allocateWorkforce (pure deterministic logic, no AI/Firestore)
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/** Numeric weight assigned to each urgency label (higher = more urgent). */
+const URGENCY_WEIGHT = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+/**
+ * Base worker-hours needed to clear one unit of waste.
+ * Severity score (1–10) is multiplied by this factor.
+ */
+const BASE_HOURS_PER_SEVERITY_UNIT = 0.5;
+
+/**
+ * Truck capacity multiplier: each truck halves the time for its assigned zone
+ * (they can haul more per trip, reducing round-trips).
+ */
+const TRUCK_TIME_REDUCTION_FACTOR = 0.5;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Maps a risk / urgency string to a numeric priority weight.
+ * Accepts both urgency labels (critical/high/medium/low) and
+ * raw severity scores (1–10) to stay compatible with both
+ * detectHotspots and predictGarbage output shapes.
+ *
+ * @param {string|number} value
+ * @returns {number}  Priority weight (higher = more urgent)
+ */
+function toPriorityWeight(value) {
+  if (typeof value === "number") {
+    // Map a 1–10 severity score into the same 1–4 band as urgency labels
+    if (value >= 9) return 4; // critical
+    if (value >= 7) return 3; // high
+    if (value >= 4) return 2; // medium
+    return 1;                  // low
+  }
+  const key = String(value).toLowerCase().trim();
+  return URGENCY_WEIGHT[key] ?? 1;
+}
+
+/**
+ * Sorts hotspots by descending priority weight, then by descending severity
+ * score as a tiebreaker, then alphabetically by name for deterministic output.
+ *
+ * @param {ProcessedHotspot[]} hotspots
+ * @returns {ProcessedHotspot[]}
+ */
+function sortByPriority(hotspots) {
+  return [...hotspots].sort((a, b) => {
+    if (b.priorityWeight !== a.priorityWeight) return b.priorityWeight - a.priorityWeight;
+    if (b.severityScore !== a.severityScore) return b.severityScore - a.severityScore;
+    return a.name.localeCompare(b.name); // deterministic tiebreaker
+  });
+}
+
+/**
+ * Distributes `total` integer units across N slots proportionally to each
+ * slot's weight. Guarantees every slot gets at least 1 unit, and the total
+ * is exactly `total` (surplus is given to the highest-weight slots).
+ *
+ * @param {number[]} weights
+ * @param {number}   total
+ * @returns {number[]}
+ */
+function distributeProportionally(weights, total) {
+  const weightSum = weights.reduce((s, w) => s + w, 0) || 1;
+  // Base allocation (floor)
+  const allocs = weights.map((w) => Math.max(1, Math.floor((w / weightSum) * total)));
+  let assigned = allocs.reduce((s, v) => s + v, 0);
+
+  // Distribute remainder to highest-weight slots first
+  const sorted = weights
+    .map((w, i) => ({ i, w }))
+    .sort((a, b) => b.w - a.w);
+
+  for (const { i } of sorted) {
+    if (assigned >= total) break;
+    allocs[i]++;
+    assigned++;
+  }
+
+  // If clamping minimums pushed total over, trim from lowest-weight slots
+  const sortedAsc = [...sorted].reverse();
+  for (const { i } of sortedAsc) {
+    if (assigned <= total) break;
+    if (allocs[i] > 1) { allocs[i]--; assigned--; }
+  }
+
+  return allocs;
+}
+
+/**
+ * Generates a human-readable route strategy string based on the sorted list.
+ *
+ * @param {object[]} prioritized  Sorted, allocated hotspot objects.
+ * @returns {string}
+ */
+function buildRouteStrategy(prioritized) {
+  if (prioritized.length === 0) return "No hotspots to service.";
+  if (prioritized.length === 1) {
+    return `Deploy all resources directly to ${prioritized[0].name}. Single-zone operation — no routing required.`;
+  }
+
+  const criticalZones = prioritized.filter((h) => h.priorityWeight === 4);
+  const highZones = prioritized.filter((h) => h.priorityWeight === 3);
+  const remaining = prioritized.filter((h) => h.priorityWeight <= 2);
+
+  const parts = [];
+
+  if (criticalZones.length) {
+    parts.push(
+      `Immediately deploy maximum resources to CRITICAL zone(s): ${criticalZones.map((z) => z.name).join(", ")
+      }. Clear before moving to secondary areas.`
+    );
+  }
+  if (highZones.length) {
+    parts.push(
+      `HIGH priority zones (${highZones.map((z) => z.name).join(", ")
+      }) should be addressed in parallel by split teams once critical zones are stabilised.`
+    );
+  }
+  if (remaining.length) {
+    parts.push(
+      `Remaining zones (${remaining.map((z) => z.name).join(", ")
+      }) are serviced last using residual capacity.`
+    );
+  }
+
+  parts.push(
+    "Trucks should follow the priority order for collection routes, " +
+    "minimising backtracking by clustering geographically adjacent zones within the same priority band."
+  );
+
+  return parts.join(" ");
+}
+
+/**
+ * Core workforce allocation algorithm — exported for unit testing.
+ *
+ * @param {object} input
+ * @param {object[]} input.hotspots        Raw hotspot objects from the request.
+ * @param {number}   input.num_workers     Total available workers.
+ * @param {number}   input.num_trucks      Total available trucks.
+ * @returns {{
+ *   allocation_plan:           string,
+ *   priority_order:            object[],
+ *   route_strategy:            string,
+ *   estimated_completion_hours: number
+ * }}
+ */
+function allocateWorkforceLogic({ hotspots, num_workers, num_trucks }) {
+  const workers = Math.max(1, Math.floor(Number(num_workers) || 1));
+  const trucks = Math.max(1, Math.floor(Number(num_trucks) || 1));
+
+  // ── Normalise each hotspot into a consistent internal shape ────────────────
+  /**
+   * @typedef {{
+   *   name:          string,
+   *   severityScore: number,
+   *   urgencyLabel:  string,
+   *   priorityWeight:number,
+   *   latitude:      number|null,
+   *   longitude:     number|null,
+   *   wasteType:     string,
+   *   reportCount:   number
+   * }} ProcessedHotspot
+   */
+  const processed = hotspots.map((h, idx) => {
+    // Accept both snake_case (detectHotspots output) and camelCase variants
+    const name = h.name || h.zone_name ||
+      h.location_description || `Zone ${idx + 1}`;
+    const severity = Number(h.severity_score ?? h.severity ?? h.avg_severity ?? 5);
+    const urgency = h.urgency_level ?? h.risk_level ?? h.urgency ?? "medium";
+
+    return {
+      name,
+      severityScore: isNaN(severity) ? 5 : Math.min(10, Math.max(1, severity)),
+      urgencyLabel: String(urgency).toLowerCase(),
+      priorityWeight: toPriorityWeight(urgency) || toPriorityWeight(severity),
+      latitude: h.latitude ?? h.lat ?? null,
+      longitude: h.longitude ?? h.lng ?? null,
+      wasteType: h.waste_type ?? h.dominant_waste_type ?? h.predicted_waste_type ?? "Mixed Waste",
+      reportCount: Number(h.report_count ?? h.reportCount ?? 1),
+    };
+  });
+
+  // ── Sort by priority (descending urgency → severity → name) ───────────────
+  const sorted = sortByPriority(processed);
+
+  // ── Distribute workers + trucks proportionally to priority weights ────────
+  const weights = sorted.map((h) => h.priorityWeight);
+  const workerAllocs = distributeProportionally(weights, workers);
+  const truckAllocs = distributeProportionally(weights, trucks);
+
+  // ── Estimate completion time per zone, then take the max (parallel ops) ──
+  // Formula: base_hours = severity × BASE_HOURS_PER_SEVERITY_UNIT
+  //          per_worker = base_hours / workers_assigned
+  //          with_truck = per_worker × TRUCK_TIME_REDUCTION_FACTOR (if truck present)
+  const zoneEstimates = sorted.map((h, i) => {
+    const baseHours = h.severityScore * BASE_HOURS_PER_SEVERITY_UNIT;
+    const perWorker = baseHours / workerAllocs[i];
+    const hasTruck = truckAllocs[i] > 0;
+    return hasTruck ? perWorker * TRUCK_TIME_REDUCTION_FACTOR : perWorker;
+  });
+
+  const maxZoneHours = zoneEstimates.length ? Math.max(...zoneEstimates) : 0;
+  // Round up to nearest 0.5 h for a realistic operational estimate
+  const estimatedHours = Math.ceil(maxZoneHours * 2) / 2;
+
+  // ── Build priority_order output array ─────────────────────────────────────
+  const priority_order = sorted.map((h, i) => ({
+    rank: i + 1,
+    zone_name: h.name,
+    urgency_level: h.urgencyLabel,
+    severity_score: h.severityScore,
+    waste_type: h.wasteType,
+    latitude: h.latitude,
+    longitude: h.longitude,
+    report_count: h.reportCount,
+    workers_assigned: workerAllocs[i],
+    trucks_assigned: truckAllocs[i],
+    estimated_zone_hours: Math.ceil(zoneEstimates[i] * 2) / 2,
+  }));
+
+  // ── Build human-readable allocation plan ───────────────────────────────
+  const planLines = [
+    `WORKFORCE ALLOCATION PLAN — Madurai Municipal Corporation`,
+    `Total resources: ${workers} worker(s), ${trucks} truck(s) across ${sorted.length} zone(s).`,
+    `──────────────────────────────────────────────────`,
+    ...priority_order.map((z) =>
+      `Rank ${z.rank} [${z.urgency_level.toUpperCase()}] ${z.zone_name}\n` +
+      `  Waste type : ${z.waste_type}\n` +
+      `  Severity   : ${z.severity_score}/10\n` +
+      `  Workers    : ${z.workers_assigned}\n` +
+      `  Trucks     : ${z.trucks_assigned}\n` +
+      `  Est. time  : ${z.estimated_zone_hours} hr(s)`
+    ),
+    `──────────────────────────────────────────────────`,
+    `Overall estimated completion: ${estimatedHours} hr(s) (parallel team deployment).`,
+  ];
+
+  const allocation_plan = planLines.join("\n");
+
+  // ── Build route strategy ────────────────────────────────────────────
+  const route_strategy = buildRouteStrategy(sorted);
+
+  return {
+    allocation_plan,
+    priority_order,
+    route_strategy,
+    estimated_completion_hours: estimatedHours,
+  };
+}
+
+// =============================================================================
+// CLOUD FUNCTION 5 — allocateWorkforce
+// =============================================================================
+
+/**
+ * POST /allocateWorkforce
+ *
+ * Deterministically allocates sanitation workers and trucks across a set of
+ * hotspot zones, ordered by severity / urgency.
+ *
+ * Request body:
+ * {
+ *   "hotspots": [                          // required — array of zone objects
+ *     {
+ *       "name":           "MG Road",       // or zone_name / location_description
+ *       "severity_score": 8,              // 1–10 (also accepts avg_severity)
+ *       "urgency_level":  "high",         // or risk_level: low|medium|high|critical
+ *       "waste_type":     "Household Waste",
+ *       "latitude":       9.9252,          // optional
+ *       "longitude":      78.1198,         // optional
+ *       "report_count":   12               // optional
+ *     }
+ *   ],
+ *   "num_workers": 20,                     // required — total workers available
+ *   "num_trucks":  5                       // required — total trucks available
+ * }
+ *
+ * Success 200:
+ * {
+ *   "success": true,
+ *   "zone_count": 3,
+ *   "resources": { "workers": 20, "trucks": 5 },
+ *   "allocation_plan":            "<human-readable multi-line plan>",
+ *   "priority_order": [
+ *     {
+ *       "rank": 1, "zone_name": "...", "urgency_level": "critical",
+ *       "severity_score": 9, "waste_type": "...",
+ *       "latitude": null, "longitude": null, "report_count": 7,
+ *       "workers_assigned": 10, "trucks_assigned": 3,
+ *       "estimated_zone_hours": 2.5
+ *     }
+ *   ],
+ *   "route_strategy":             "<human-readable routing instructions>",
+ *   "estimated_completion_hours": 2.5
+ * }
+ *
+ * Sorting logic:
+ *   1. urgency_level (critical > high > medium > low)
+ *   2. severity_score descending (tiebreaker)
+ *   3. zone name alphabetically (deterministic final tiebreaker)
+ *
+ * Allocation logic:
+ *   • Workers and trucks distributed proportionally to each zone’s priority weight.
+ *   • Every zone guaranteed at least 1 worker and 1 truck.
+ *   • Completion time = max zone time (teams work in parallel).
+ *   • Zone time = (severity × 0.5h) ÷ workers_assigned × 0.5 (truck efficiency).
+ */
+exports.allocateWorkforce = onRequest(
+  {
+    timeoutSeconds: 30,     // pure logic — no external API calls
+    memory: "256MiB",
+    cors: true,
+  },
+  async (req, res) => {
+    // ── Method guard ────────────────────────────────────────────────────────
+    if (req.method !== "POST") {
+      return res.status(405).json({ success: false, error: "Method Not Allowed. Use POST." });
+    }
+
+    const { hotspots, num_workers, num_trucks } = req.body ?? {};
+
+    // ── Input validation ─────────────────────────────────────────────────────
+    if (!Array.isArray(hotspots)) {
+      return res.status(400).json({
+        success: false,
+        error: "`hotspots` must be an array of zone objects.",
+      });
+    }
+    if (hotspots.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "`hotspots` array must not be empty.",
+      });
+    }
+    if (hotspots.length > 50) {
+      return res.status(400).json({
+        success: false,
+        error: "`hotspots` array must not exceed 50 zones.",
+      });
+    }
+    if (num_workers === undefined || num_workers === null) {
+      return res.status(400).json({ success: false, error: "`num_workers` is required." });
+    }
+    if (num_trucks === undefined || num_trucks === null) {
+      return res.status(400).json({ success: false, error: "`num_trucks` is required." });
+    }
+    if (isNaN(Number(num_workers)) || Number(num_workers) < 1) {
+      return res.status(400).json({ success: false, error: "`num_workers` must be a positive integer." });
+    }
+    if (isNaN(Number(num_trucks)) || Number(num_trucks) < 1) {
+      return res.status(400).json({ success: false, error: "`num_trucks` must be a positive integer." });
+    }
+
+    console.info(
+      `[allocateWorkforce] ${hotspots.length} zone(s) | workers=${num_workers} | trucks=${num_trucks}`
+    );
+
+    try {
+      const result = allocateWorkforceLogic({ hotspots, num_workers, num_trucks });
+
+      console.info(
+        `[allocateWorkforce] Done — ${result.priority_order.length} zone(s) ranked` +
+        ` | est. completion: ${result.estimated_completion_hours}h`
+      );
+
+      return res.status(200).json({
+        success: true,
+        zone_count: result.priority_order.length,
+        resources: {
+          workers: Math.max(1, Math.floor(Number(num_workers))),
+          trucks: Math.max(1, Math.floor(Number(num_trucks))),
+        },
+        ...result,
+      });
+    } catch (error) {
+      console.error("[allocateWorkforce] ERROR:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Internal server error during workforce allocation.",
+      });
+    }
+  }
+);
+
+// =============================================================================
+// Named exports for unit testing
+// =============================================================================
+exports._calculateWardScore = calculateWardScore;
+exports._allocateWorkforceLogic = allocateWorkforceLogic;
+
+// =============================================================================
+// SECTION 6 — generateDailyReport helpers
+// =============================================================================
+
+/**
+ * Formats a hotspot array into a compact bullet list for the Gemini prompt.
+ *
+ * @param {object[]} hotspots
+ * @returns {string}
+ */
+function formatHotspotsForPrompt(hotspots) {
+  if (!Array.isArray(hotspots) || hotspots.length === 0) {
+    return "  • No significant hotspots recorded today.";
+  }
+  return hotspots
+    .slice(0, 5) // cap at 5 to control token usage
+    .map((h, i) => {
+      const name = h.zone_name || h.location_description || h.name || `Zone ${i + 1}`;
+      const severity = h.avg_severity ?? h.severity_score ?? h.severity ?? "N/A";
+      const urgency = h.risk_level ?? h.urgency_level ?? h.urgency ?? "unknown";
+      const waste = h.dominant_waste_type ?? h.waste_type ?? h.predicted_waste_type ?? "Mixed waste";
+      return `  • ${name} | Severity: ${severity}/10 | Urgency: ${urgency} | Waste: ${waste}`;
+    })
+    .join("\n");
+}
+
+/**
+ * Formats a predictions object into a readable summary for the prompt.
+ *
+ * @param {object|null} predictions
+ * @returns {string}
+ */
+function formatPredictionsForPrompt(predictions) {
+  if (!predictions || typeof predictions !== "object") {
+    return "No predictive data available.";
+  }
+  const prob = predictions.risk_probability != null
+    ? `${Math.round(predictions.risk_probability * 100)}%`
+    : "unknown";
+  const zones = Array.isArray(predictions.predicted_risk_zones)
+    ? predictions.predicted_risk_zones.slice(0, 3).map((z) =>
+      z.zone_name || z.name || "Unnamed zone"
+    ).join(", ")
+    : "Not specified";
+  const action = predictions.preventive_action_plan
+    ? predictions.preventive_action_plan.split("\n")[0].slice(0, 120)
+    : "Standard patrol recommended.";
+
+  return [
+    `Tomorrow's citywide risk probability: ${prob}`,
+    `At-risk zones: ${zones}`,
+    `Priority action: ${action}`,
+  ].join(" | ");
+}
+
+/**
+ * Builds the Gemini prompt for the daily sanitation report.
+ *
+ * @param {object[]}   hotspots         Today's detected hotspots.
+ * @param {number}     cleanlinessScore  Ward/city cleanliness score (0–100).
+ * @param {string}     ratingCategory    "Clean" | "Moderate" | "Critical"
+ * @param {object|null} predictions      Tomorrow's prediction payload.
+ * @param {string}     reportDate        YYYY-MM-DD string for today.
+ * @returns {string}
+ */
+function buildDailyReportPrompt(hotspots, cleanlinessScore, ratingCategory, predictions, reportDate) {
+  const hotspotText = formatHotspotsForPrompt(hotspots);
+  const predictionText = formatPredictionsForPrompt(predictions);
+
+  return `You are an official AI civic report writer for Madurai Municipal Corporation.
+Generate a 150-word professional municipal sanitation status report for ${reportDate}.
+
+Use a formal, official government tone — similar to a District Collector's field report.
+Do NOT use bullet points. Write in structured paragraphs.
+Return ONLY strictly valid JSON with NO markdown, NO code fences, NO extra text:
+
+Input data:
+- City Cleanliness Score: ${cleanlinessScore}/100 (Rating: ${ratingCategory})
+- Active hotspot zones today:
+${hotspotText}
+- Tomorrow's prediction summary: ${predictionText}
+
+Return exactly this JSON structure:
+{
+  "summary_report": "<your 150-word official sanitation report here>"
+}
+
+The report must:
+  1. Open with the date and overall cleanliness status.
+  2. Briefly describe the active hotspot zones and their severity.
+  3. Reference tomorrow's predicted risk and the recommended preventive action.
+  4. Close with a formal directive to field supervisors.
+  5. Be exactly around 150 words — not significantly shorter or longer.`;
+}
+
+/**
+ * Parses and validates Gemini's daily-report JSON response.
+ *
+ * @param {string} rawText
+ * @returns {{ summary_report: string }}
+ */
+function parseDailyReportResponse(rawText) {
+  // Strip accidental markdown fences
+  const cleaned = rawText
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error(`Gemini returned non-JSON output. Raw: ${rawText}`);
+  }
+
+  if (!("summary_report" in parsed)) {
+    throw new Error(`Gemini response missing required field: "summary_report"`);
+  }
+  if (typeof parsed.summary_report !== "string" || !parsed.summary_report.trim()) {
+    throw new Error(`"summary_report" must be a non-empty string.`);
+  }
+
+  // Soft word-count check — warn in logs but don’t reject (Gemini is approximate)
+  const wordCount = parsed.summary_report.trim().split(/\s+/).length;
+  if (wordCount < 80 || wordCount > 250) {
+    console.warn(`[generateDailyReport] Unexpected word count: ${wordCount} (expected ~150).`);
+  }
+
+  return { summary_report: parsed.summary_report.trim() };
+}
+
+// =============================================================================
+// CLOUD FUNCTION 6 — generateDailyReport
+// =============================================================================
+
+/**
+ * POST /generateDailyReport
+ *
+ * Composes a 150-word official municipal sanitation report by feeding today’s
+ * hotspot data, the cleanliness score, and tomorrow’s predictions into Gemini.
+ *
+ * Request body:
+ * {
+ *   "hotspots": [               // required — array of hotspot/zone objects
+ *     {
+ *       "zone_name":          "MG Road",
+ *       "avg_severity":        7.5,
+ *       "risk_level":          "high",
+ *       "dominant_waste_type": "Household Garbage"
+ *     }
+ *   ],
+ *   "cleanliness_score":  62,   // required — numeric 0–100
+ *   "rating_category":   "Moderate",  // optional (derived if omitted)
+ *   "predictions": {            // optional — output of predictGarbage
+ *     "risk_probability":        0.74,
+ *     "predicted_risk_zones":    [ ... ],
+ *     "preventive_action_plan":  "Deploy extra trucks to ..."
+ *   },
+ *   "report_date": "2026-02-27"  // optional — defaults to today (IST)
+ * }
+ *
+ * Success 200:
+ * {
+ *   "success":        true,
+ *   "report_date":    "2026-02-27",
+ *   "word_count":     148,
+ *   "summary_report": "<150-word official report text>"
+ * }
+ *
+ * Error 4xx/5xx:
+ * { "success": false, "error": "..." }
+ */
+exports.generateDailyReport = onRequest(
+  {
+    timeoutSeconds: 60,
+    memory: "256MiB",
+    cors: true,
+  },
+  async (req, res) => {
+    // ── Method guard ───────────────────────────────────────────────────────
+    if (req.method !== "POST") {
+      return res.status(405).json({ success: false, error: "Method Not Allowed. Use POST." });
+    }
+
+    const {
+      hotspots,
+      cleanliness_score,
+      rating_category,
+      predictions = null,
+      report_date,
+    } = req.body ?? {};
+
+    // ── Input validation ────────────────────────────────────────────────────
+    if (!Array.isArray(hotspots)) {
+      return res.status(400).json({
+        success: false,
+        error: "`hotspots` must be an array.",
+      });
+    }
+    if (cleanliness_score === undefined || cleanliness_score === null) {
+      return res.status(400).json({
+        success: false,
+        error: "`cleanliness_score` is required.",
+      });
+    }
+    const score = Number(cleanliness_score);
+    if (isNaN(score) || score < 0 || score > 100) {
+      return res.status(400).json({
+        success: false,
+        error: "`cleanliness_score` must be a number between 0 and 100.",
+      });
+    }
+
+    // Derive rating category if not supplied
+    const rating = String(rating_category ||
+      (score >= 80 ? "Clean" : score >= 50 ? "Moderate" : "Critical")
+    );
+
+    // Resolve report date (default: today in IST, YYYY-MM-DD)
+    const dateStr = report_date && typeof report_date === "string"
+      ? report_date
+      : new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }); // YYYY-MM-DD
+
+    console.info(
+      `[generateDailyReport] date=${dateStr} | score=${score} | rating=${rating}` +
+      ` | hotspots=${hotspots.length} | predictions=${predictions ? "yes" : "no"}`
+    );
+
+    try {
+      // ── Build prompt ──────────────────────────────────────────────────
+      const prompt = buildDailyReportPrompt(
+        hotspots, score, rating, predictions, dateStr
+      );
+
+      // ── Call Gemini ───────────────────────────────────────────────────
+      // Slightly higher temperature than analytical functions —
+      // reports need some linguistic variation while staying factual.
+      const reportModel = genAI.getGenerativeModel({
+        model: GEMINI_MODEL,
+        generationConfig: {
+          temperature: 0.4,
+          topP: 0.9,
+          maxOutputTokens: 512,  // 150 words ≈ 200 tokens; headroom for JSON wrapper
+        },
+      });
+
+      console.info("[generateDailyReport] Calling Gemini...");
+      const geminiResult = await reportModel.generateContent(prompt);
+      const rawText = geminiResult.response.text();
+      console.info(`[generateDailyReport] Gemini response length: ${rawText.length} chars`);
+
+      // ── Validate JSON ─────────────────────────────────────────────────
+      const { summary_report } = parseDailyReportResponse(rawText);
+      const wordCount = summary_report.split(/\s+/).length;
+      console.info(`[generateDailyReport] Report generated: ${wordCount} words.`);
+
+      // ── Return ─────────────────────────────────────────────────────────
+      return res.status(200).json({
+        success: true,
+        report_date: dateStr,
+        word_count: wordCount,
+        summary_report,
+      });
+    } catch (error) {
+      console.error("[generateDailyReport] ERROR:", error);
+
+      const isValidationError =
+        error.message?.includes("missing required field") ||
+        error.message?.includes("must be a non-empty") ||
+        error.message?.includes("non-JSON");
+
+      return res.status(isValidationError ? 422 : 500).json({
+        success: false,
+        error: error.message || "Internal server error during report generation.",
       });
     }
   }
