@@ -23,7 +23,7 @@ import BeforeAfterCard from '../components/landing/BeforeAfterCard'
 import {
   HiCamera, HiCpuChip, HiChartBar, HiCheckCircle, HiClock,
   HiClipboardDocument, HiArrowTrendingUp, HiSparkles, HiTruck,
-  HiBolt, HiLockClosed, HiMapPin, HiFlag,
+  HiBolt, HiMapPin, HiFlag,
   HiRocketLaunch, HiGlobeAlt, HiServer,
 } from 'react-icons/hi2'
 
@@ -135,11 +135,6 @@ function HeroSection() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 w-full">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
 
-          {/* Animated tagline pill */}
-          <div className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase bg-[var(--color-gov-50)] text-[var(--color-gov-700)] border border-[var(--color-gov-200)]">
-            <span className="w-2 h-2 rounded-full animate-pulse bg-emerald-400" aria-hidden="true" />
-            Report &nbsp;&middot;&nbsp; Analyse &nbsp;&middot;&nbsp; Resolve
-          </div>
 
           {/* Heading */}
           <h1
@@ -163,9 +158,13 @@ function HeroSection() {
               <HiCamera className="w-5 h-5" aria-hidden="true" />
               Raise a Complaint
             </HeroButton>
-            <HeroButton to="/login" variant="primary">
-              <HiLockClosed className="w-5 h-5" aria-hidden="true" />
-              Citizen Login
+            <HeroButton to="/daily-report" variant="primary">
+              <HiChartBar className="w-5 h-5" aria-hidden="true" />
+              Daily Report
+            </HeroButton>
+            <HeroButton to="/map" variant="primary">
+              <HiMapPin className="w-5 h-5" aria-hidden="true" />
+              Monitoring Map
             </HeroButton>
           </div>
 

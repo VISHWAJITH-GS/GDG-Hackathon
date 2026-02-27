@@ -111,6 +111,9 @@ function GovLayout({ children }) {
         Skip to main content
       </a>
 
+      {/* ── Sticky nav wrapper ── */}
+      <div className="sticky top-0 z-50 shadow-md">
+
       {/* ── 1. Top utility bar ── */}
       <div className="bg-[var(--color-gov-900)] text-white text-xs py-1.5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
@@ -188,6 +191,8 @@ function GovLayout({ children }) {
         </div>
       </header>
 
+      </div>{/* /sticky nav wrapper */}
+
       {/* ── 5. Env warning (only when keys are missing) ── */}
       <EnvBanner />
 
@@ -199,47 +204,107 @@ function GovLayout({ children }) {
       {/* ── Footer ── */}
       <footer className="bg-[var(--color-gov-900)] text-white mt-auto">
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-          <div className="grid sm:grid-cols-3 gap-6 text-sm">
-            <div>
-              <p className="font-bold mb-2 text-[var(--color-saffron)]">M-Clean Portal</p>
-              <p className="text-blue-200 text-xs leading-relaxed">
-                A Tamil Nadu Government initiative for citizen-driven municipal cleanliness
-                reporting and grievance redressal under the Swachh Bharat Mission.
+        {/* Tricolor stripe */}
+        <div className="flex h-1" aria-hidden="true">
+          <div className="flex-1 bg-[#FF9933]" />
+          <div className="flex-1 bg-white" />
+          <div className="flex-1 bg-[#138808]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 py-10">
+
+          {/* 3-column grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
+
+            {/* Col 1 — Brand */}
+            <div className="space-y-3">
+              <p className="text-[#FF9933] text-xs font-bold uppercase tracking-widest">M-Clean Portal</p>
+              <p className="text-sm font-semibold text-white leading-snug">
+                Corporation of Madurai
               </p>
+              <p className="text-blue-200 text-xs leading-relaxed">
+                AI-powered citizen sanitation reporting platform under the Swachh Bharat Mission,
+                Government of Tamil Nadu.
+              </p>
+              {/* Gov external links */}
+              <div className="pt-1 space-y-1 text-xs">
+                {[
+                  { href: 'https://maduraicorporation.co.in', label: 'maduraicorporation.co.in' },
+                  { href: 'https://www.tn.gov.in',             label: 'tn.gov.in' },
+                  { href: 'https://www.tnurbantree.tn.gov.in', label: 'TN Urban Development (CMA)' },
+                ].map(({ href, label }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-blue-300 hover:text-white transition-colors"
+                  >
+                    <span className="text-[10px]">↗</span> {label}
+                  </a>
+                ))}
+              </div>
             </div>
-            <div>
-              <p className="font-bold mb-2 text-[var(--color-saffron)]">Quick Links</p>
-              <ul className="text-blue-200 text-xs space-y-1">
-                <li><a href="#" className="hover:text-white transition">About the Portal</a></li>
-                <li><a href="#" className="hover:text-white transition">Citizen Charter</a></li>
-                <li><a href="#" className="hover:text-white transition">RTI Information</a></li>
-                <li><a href="#" className="hover:text-white transition">Accessibility</a></li>
-              </ul>
+
+            {/* Col 2 — Portal Links */}
+            <div className="space-y-3">
+              <p className="text-[#FF9933] text-xs font-bold uppercase tracking-widest">Portal</p>
+              <nav className="flex flex-col gap-2">
+                {NAV_ITEMS.map(({ to, label, end }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      `text-xs transition-colors ${isActive ? 'text-[#FF9933] font-semibold' : 'text-blue-200 hover:text-white'}`
+                    }
+                  >
+                    {label}
+                  </NavLink>
+                ))}
+              </nav>
             </div>
-            <div>
-              <p className="font-bold mb-2 text-[var(--color-saffron)]">Help & Support</p>
-              <ul className="text-blue-200 text-xs space-y-1">
-                <li>Helpline: <strong className="text-white">1800-XXX-XXXX</strong></li>
-                <li>Email: <strong className="text-white">support@mclean.gov.in</strong></li>
-                <li className="pt-1">Mon–Fri, 9:00 AM – 5:00 PM</li>
-              </ul>
+
+            {/* Col 3 — Contact */}
+            <div className="space-y-3">
+              <p className="text-[#FF9933] text-xs font-bold uppercase tracking-widest">Contact</p>
+              <address className="not-italic text-xs text-blue-200 space-y-2 leading-relaxed">
+                <p>Arignar Anna Maligai, Thallakulam<br />Madurai – 625 002, Tamil Nadu, India</p>
+                <p>
+                  <a href="tel:914522540333" className="hover:text-white transition-colors">
+                    +91 452 2540333
+                  </a>
+                </p>
+                <p>
+                  Helpline:{' '}
+                  <a href="tel:917871661787" className="hover:text-white transition-colors">
+                    +91 78716 61787
+                  </a>
+                </p>
+                <p>
+                  <a
+                    href="mailto:commissioner@maduraicorporation.in"
+                    className="hover:text-white transition-colors break-all"
+                  >
+                    commissioner@maduraicorporation.in
+                  </a>
+                </p>
+              </address>
             </div>
+
           </div>
 
-          <div className="border-t border-white/10 mt-6 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-blue-300">
+          {/* Bottom bar */}
+          <div className="border-t border-white/10 mt-8 pt-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-blue-300">
             <span>
-                          © {new Date().getFullYear()} Urban Local Bodies Department, Government of Tamil Nadu.
-              All rights reserved.
+              © {new Date().getFullYear()} Urban Local Bodies Department, Government of Tamil Nadu. All rights reserved.
             </span>
-            <span className="flex gap-3">
-              <a href="#" className="hover:text-white transition">Terms of Use</a>
-              <span>|</span>
-              <a href="#" className="hover:text-white transition">Privacy Policy</a>
-              <span>|</span>
-              <a href="#" className="hover:text-white transition">Sitemap</a>
+            <span className="flex gap-4">
+              <a href="https://maduraicorporation.co.in" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Official Site</a>
+              <a href="https://maduraipublic.grievancecell.org" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Grievance Cell</a>
             </span>
           </div>
+
         </div>
       </footer>
     </div>

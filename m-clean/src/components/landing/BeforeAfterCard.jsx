@@ -5,11 +5,9 @@
 // ─────────────────────────────────────────────────────────────
 import { HiExclamationTriangle, HiCheckBadge } from 'react-icons/hi2'
 
-// Real photo URLs (Unsplash — free to use under Unsplash License)
-// Before: Indian urban waste accumulation on a street
-const BEFORE_IMG = 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=640&q=80'
-// After:  Meenakshi Amman Temple, Madurai — free photo by Melissa Kumaresan (kFsWnzm-psY)
-const AFTER_IMG  = 'https://images.unsplash.com/photo-1572146462570-2129a547e6dd?q=80&w=640&auto=format&fit=crop'
+// Local images — place your files at m-clean/public/images/before.jpg and after.jpg
+const BEFORE_IMG = '/images/before.jpg'
+const AFTER_IMG  = '/images/after.jpg'
 
 function BeforeIllustration() {
   return (
