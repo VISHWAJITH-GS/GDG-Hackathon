@@ -1,0 +1,243 @@
+/* ============================================================
+   src/index.css
+   m-clean — Official Government Portal Theme
+   Inspired by india.gov.in / mygov.in design language
+   ============================================================ */
+
+/* Tailwind v4 — single import */
+@import "tailwindcss";
+
+/* ---------- Design Tokens ---------- */
+@theme {
+  /* Government Blue palette */
+  --color-gov-900: #0a2240;
+  --color-gov-800: #0d3060;
+  --color-gov-700: #104080;
+  --color-gov-600: #1557a0;
+  --color-gov-500: #1a6bbf;
+  --color-gov-400: #3d8fd1;
+  --color-gov-100: #dbeafe;
+  --color-gov-50: #eff6ff;
+
+  /* Tricolor accent */
+  --color-saffron: #FF9933;
+  /* Kesari */
+  --color-tri-white: #FFFFFF;
+  --color-tri-green: #138808;
+  /* India Green */
+  --color-chakra: #000080;
+  /* Ashoka Chakra blue */
+
+  /* Neutral / surface */
+  --color-surface: #F5F7FA;
+  /* light page bg */
+  --color-card: #FFFFFF;
+  --color-border: #D1D9E6;
+  --color-border-strong: #A9B8CF;
+  --color-muted: #5A6E8A;
+  --color-text: #1A2B42;
+  --color-text-soft: #3D5068;
+
+  /* Status colours */
+  --color-pending: #D97706;
+  --color-progress: #1D4ED8;
+  --color-resolved: #166534;
+  --color-rejected: #9B1C1C;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------- Base reset ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e8edf4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #a9b8cf;
+  border-radius: 99px;
+}
+
+/* ---------- Focus ring ---------- */
+:focus-visible {
+  outline: 2px solid var(--color-gov-500);
+  outline-offset: 3px;
+}
+
+/* =====================================================
+   GOVERNMENT UI UTILITIES
+   ===================================================== */
+
+/* Tricolor top stripe — use on the page header banner */
+.tricolor-stripe {
+  height: 4px;
+  background: linear-gradient(to right,
+      var(--color-saffron) 0% 33.33%,
+      var(--color-tri-white) 33.33% 66.66%,
+      var(--color-tri-green) 66.66% 100%);
+}
+
+/* Official card — white with formal left-blue border */
+.gov-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(10, 34, 64, 0.06), 0 4px 16px rgba(10, 34, 64, 0.04);
+}
+
+/* Section header bar — dark blue with white text */
+.section-header {
+  background-color: var(--color-gov-800);
+  color: #ffffff;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-left: 4px solid var(--color-saffron);
+}
+
+/* Form label — official style */
+.field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.375rem;
+  letter-spacing: 0.01em;
+}
+
+/* Form control */
+.field-input {
+  width: 100%;
+  background-color: #fff;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: 4px;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.field-input::placeholder {
+  color: #9AACBE;
+}
+
+.field-input:focus {
+  outline: none;
+  border-color: var(--color-gov-500);
+  box-shadow: 0 0 0 3px rgba(26, 107, 191, 0.15);
+}
+
+/* Required asterisk */
+.req {
+  color: #C0392B;
+  margin-left: 2px;
+}
+
+/* Alert / notification bar */
+.gov-alert-error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-left: 4px solid #DC2626;
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #7F1D1D;
+}
+
+/* Success notice */
+.gov-alert-success {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-left: 4px solid var(--color-tri-green);
+  border-radius: 4px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #14532D;
+}
+
+/* Primary govt button */
+.btn-gov {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--color-gov-700);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.65rem 1.75rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s, transform 0.1s;
+  letter-spacing: 0.02em;
+}
+
+.btn-gov:hover {
+  background-color: var(--color-gov-900);
+}
+
+.btn-gov:active {
+  transform: scale(0.98);
+}
+
+.btn-gov:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Outline button */
+.btn-gov-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: transparent;
+  color: var(--color-gov-700);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.25rem;
+  border: 1.5px solid var(--color-gov-700);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-gov-outline:hover {
+  background-color: var(--color-gov-50);
+}
+
+/* Stat card */
+.stat-card {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 1.25rem 1.5rem;
+  border-top: 3px solid var(--color-gov-700);
+}
