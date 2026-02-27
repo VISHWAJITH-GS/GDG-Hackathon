@@ -1,29 +1,25 @@
 // src/firebase.js
 // ---------------------------------------------------------------
-// Firebase configuration placeholder.
-// Replace the firebaseConfig object below with your own project
-// credentials from the Firebase Console once backend is ready.
+// Firebase modular SDK initialisation (v9+).
+// Replace the placeholder values below with your real Firebase
+// project credentials from the Firebase Console.
 // ---------------------------------------------------------------
 
-// import { initializeApp } from 'firebase/app'
-// import { getFirestore }   from 'firebase/firestore'
-// import { getStorage }     from 'firebase/storage'
-// import { getAuth }        from 'firebase/auth'
+import { initializeApp } from 'firebase/app'
+import { getFirestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID",
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? 'YOUR_API_KEY',
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? 'YOUR_PROJECT.firebaseapp.com',
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? 'YOUR_PROJECT_ID',
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? 'YOUR_PROJECT.appspot.com',
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? 'YOUR_SENDER_ID',
+    appId: import.meta.env.VITE_FIREBASE_APP_ID ?? 'YOUR_APP_ID',
 }
 
-// const app       = initializeApp(firebaseConfig)
-// const db        = getFirestore(app)
-// const storage   = getStorage(app)
-// const auth      = getAuth(app)
+const app = initializeApp(firebaseConfig)
+const db = getFirestore(app)
+const storage = getStorage(app)
 
-// export { app, db, storage, auth }
-
-export default firebaseConfig
+export { app, db, storage }
