@@ -15,6 +15,8 @@ import {
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import Button from '../components/Button'
+import { HiExclamationTriangle } from 'react-icons/hi2'
 
 // ── Ensure Firestore citizen doc exists (Google new users) ──
 async function ensureCitizenDoc(firebaseUser) {
@@ -149,7 +151,7 @@ export default function LoginPage() {
           {error && (
             <div role="alert"
               className="mb-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
-              <span className="mt-0.5 flex-shrink-0">⚠️</span>
+              <HiExclamationTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
@@ -208,16 +210,15 @@ export default function LoginPage() {
               />
             </div>
 
-            <button
+            <Button
               type="submit"
-            disabled={loading}
-              className="w-full rounded-lg py-2.5 text-sm font-semibold text-white
-                         bg-[#104080] hover:bg-[#0d3060] disabled:opacity-60
-                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#104080]
-                         transition-colors flex items-center justify-center gap-2"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              className="w-full"
             >
-              {loading ? <><Spinner />Signing in…</> : 'Sign In'}
-            </button>
+              Sign In
+            </Button>
           </form>
 
           {/* Register link */}

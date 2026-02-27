@@ -21,6 +21,7 @@ import { signOut } from 'firebase/auth'
 import { auth, db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import StatusBadge from '../components/StatusBadge'
+import { HiInboxArrowDown } from 'react-icons/hi2'
 
 const STATUS_TABS = ['all', 'pending', 'analyzing', 'dispatched', 'cleared']
 
@@ -509,7 +510,7 @@ export default function AdminDashboard() {
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 py-16 text-center text-slate-400">
-            <p className="text-4xl mb-3">📭</p>
+            <HiInboxArrowDown className="w-12 h-12 mx-auto mb-3 text-slate-300" aria-hidden="true" />
             <p className="font-semibold text-slate-600">No complaints found</p>
             <p className="text-sm mt-1">
               {search

@@ -1,11 +1,29 @@
 // src/components/landing/BeforeAfterCard.jsx
 // ─────────────────────────────────────────────────────────────
 // Comparison card: "Before Cleanup" vs "After Cleanup".
-// Uses SVG illustration placeholders that visually represent
-// the sanitation state without requiring real images.
+// Uses real web images to represent sanitation transformation.
 // ─────────────────────────────────────────────────────────────
+import { HiExclamationTriangle, HiCheckBadge } from 'react-icons/hi2'
+
+// Real photo URLs (Unsplash — free to use under Unsplash License)
+// Before: Indian urban waste accumulation on a street
+const BEFORE_IMG = 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=640&q=80'
+// After:  Meenakshi Amman Temple, Madurai — free photo by Melissa Kumaresan (kFsWnzm-psY)
+const AFTER_IMG  = 'https://images.unsplash.com/photo-1572146462570-2129a547e6dd?q=80&w=640&auto=format&fit=crop'
 
 function BeforeIllustration() {
+  return (
+    <img
+      src={BEFORE_IMG}
+      alt="Before cleanup: littered Madurai street with accumulated waste"
+      className="w-full h-full object-cover"
+      loading="lazy"
+    />
+  )
+}
+
+// Dead code — replaced by <img>
+function _BeforeIllustrationSVG_UNUSED() {
   return (
     <svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" aria-label="Before cleanup: littered street scene">
       {/* Sky */}
@@ -61,6 +79,18 @@ function BeforeIllustration() {
 }
 
 function AfterIllustration() {
+  return (
+    <img
+      src={AFTER_IMG}
+      alt="After cleanup: Meenakshi Amman Temple — clean, restored Madurai landmark"
+      className="w-full h-full object-cover"
+      loading="lazy"
+    />
+  )
+}
+
+// Dead code — replaced by <img>
+function _AfterIllustrationSVG_UNUSED() {
   return (
     <svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg" className="w-full h-full" aria-label="After cleanup: clean street scene">
       {/* Sky */}
@@ -160,8 +190,11 @@ export default function BeforeAfterCard({ type }) {
         >
           {isBefore ? 'Before Cleanup' : 'After Cleanup'}
         </span>
-        <span className="ml-auto text-base" aria-hidden="true">
-          {isBefore ? '⚠️' : '✅'}
+        <span className="ml-auto" aria-hidden="true">
+          {isBefore
+            ? <HiExclamationTriangle className="w-4 h-4" style={{ color: '#D97706' }} />
+            : <HiCheckBadge className="w-4 h-4" style={{ color: '#138808' }} />
+          }
         </span>
       </div>
 
@@ -177,8 +210,8 @@ export default function BeforeAfterCard({ type }) {
           style={{ color: isBefore ? '#92400e' : '#14532d' }}
         >
           {isBefore
-            ? 'Unattended waste accumulation, clogged drains, and public health hazards identified by citizen reports.'
-            : 'Swift municipal response, sanitised streets, functional drainage, and verified clearance recorded in the system.'}
+            ? 'Unattended waste accumulation, clogged drains, and public health hazards on Madurai\'s streets — reported by citizens.'
+            : 'Swift municipal response restores Madurai\'s civic spaces. The Meenakshi Temple precinct: adjudged India\'s Best Swachh Iconic Place in 2017.'}
         </p>
       </div>
     </div>

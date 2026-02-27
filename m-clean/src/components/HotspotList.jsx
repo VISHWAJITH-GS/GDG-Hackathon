@@ -1,4 +1,4 @@
-// src/components/HotspotList.jsx
+import { HiMapPin, HiCheckBadge } from 'react-icons/hi2'
 // Displays top detected waste hotspots + repeated dumping zones.
 // Props:
 //   hotspots        — array from detectHotspots.top_hotspots
@@ -81,7 +81,9 @@ export default function HotspotList({
         <div className="gov-card overflow-hidden">
             {/* Header */}
             <div className="section-header flex items-center justify-between">
-                <span>📍 Active Hotspot Zones</span>
+                <span className="flex items-center gap-2">
+                <HiMapPin className="w-4 h-4" aria-hidden="true" /> Active Hotspot Zones
+                </span>
                 <span className="text-xs font-normal opacity-80">Last 7 days</span>
             </div>
 
@@ -116,7 +118,7 @@ export default function HotspotList({
                 {/* Empty */}
                 {!loading && !error && hotspots.length === 0 && (
                     <div className="flex flex-col items-center py-8 gap-2 text-center">
-                        <span className="text-3xl">🎉</span>
+                        <HiCheckBadge className="w-10 h-10 text-green-600" aria-hidden="true" />
                         <p className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>No active hotspots</p>
                         <p className="text-xs" style={{ color: 'var(--color-muted)' }}>No significant waste clusters detected in the last 7 days.</p>
                     </div>

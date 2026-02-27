@@ -10,6 +10,7 @@
 
 import { useState } from 'react'
 import StatusBadge from './StatusBadge'
+import { HiMapPin, HiCalendar, HiWrenchScrewdriver } from 'react-icons/hi2'
 
 const STATUSES = ['pending', 'analyzing', 'dispatched', 'cleared']
 
@@ -81,17 +82,17 @@ export default function ComplaintCard({ report, isAdmin = false, onStatusChange,
           {report.metadata?.latitude && (
             <span title={`${report.metadata.latitude}, ${report.metadata.longitude}`}
               className="flex items-center gap-1">
-              <span>📍</span>
+              <HiMapPin className="w-3.5 h-3.5 text-[#104080]" aria-hidden="true" />
               <span>{Number(report.metadata.latitude).toFixed(4)}, {Number(report.metadata.longitude).toFixed(4)}</span>
             </span>
           )}
           <span className="flex items-center gap-1">
-            <span>🗓</span>
+            <HiCalendar className="w-3.5 h-3.5 text-[#104080]" aria-hidden="true" />
             <span>{formatDate(report.created_at ?? report.timestamp)}</span>
           </span>
           {report.assigned_to && (
             <span className="flex items-center gap-1">
-              <span>👷</span>
+              <HiWrenchScrewdriver className="w-3.5 h-3.5 text-[#104080]" aria-hidden="true" />
               <span>{report.assigned_to}</span>
             </span>
           )}

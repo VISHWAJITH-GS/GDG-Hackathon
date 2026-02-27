@@ -15,6 +15,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db, storage } from '../firebase'
 import { FUNCTIONS_BASE, FUNCTIONS_CONFIGURED } from '../config'
+import { HiExclamationTriangle } from 'react-icons/hi2'
 
 // ── Constants ──────────────────────────────────────────────────
 const ACCEPTED_MIME = 'image/jpeg,image/png,image/webp'
@@ -405,7 +406,7 @@ export default function UploadForm({ onSuccess, createdBy = null }) {
 
                         {fileError && (
                             <p role="alert" className="text-xs text-red-700 mt-1.5 flex items-center gap-1">
-                                <span>⚠️</span> {fileError}
+                                <HiExclamationTriangle className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" /> {fileError}
                             </p>
                         )}
                     </section>
@@ -460,7 +461,7 @@ export default function UploadForm({ onSuccess, createdBy = null }) {
 
                         {geoError && (
                             <p role="alert" className="text-xs text-red-700 mt-2 flex items-start gap-1">
-                                <span className="shrink-0">⚠️</span> {geoError}
+                                <HiExclamationTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" /> {geoError}
                             </p>
                         )}
 
