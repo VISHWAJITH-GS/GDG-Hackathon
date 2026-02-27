@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@google-cloud/firestore": "^8.3.0",
+    "@google-cloud/speech": "^7.2.1",
+    "@google-cloud/vertexai": "^1.10.0",
+    "geolib": "^3.3.4",
+    "zod": "^4.3.6"
+  }
+}

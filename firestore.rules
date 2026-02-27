@@ -32,8 +32,9 @@ service cloud.firestore {
     match /reports/{reportId} {
       allow create: if isSignedIn()
                     && request.resource.data.created_by == request.auth.uid;
-      allow read:   if isSignedIn()
-                    && (isAdmin() || resource.data.created_by == request.auth.uid);
+      // Public read — the heatmap and landing page stats are visible to everyone
+      allow read:   if true;
+      allow list:   if true;
       allow update: if isSignedIn()
                     && (isAdmin() || resource.data.created_by == request.auth.uid);
       allow delete: if false;

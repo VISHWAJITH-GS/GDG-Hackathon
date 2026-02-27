@@ -39,7 +39,7 @@ function loadMapsScript(apiKey) {
 
         const script = document.createElement('script')
         script.id = MAPS_SCRIPT_ID
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=visualization`
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`
         script.async = true
         script.defer = true
         script.onload = resolve
@@ -153,34 +153,48 @@ export default function Heatmap() {
             fullscreenControl: true,
         })
 
-        heatmapRef.current = new window.google.maps.visualization.HeatmapLayer({
-            data: [],
-            map: mapRef.current,
-            radius: 35,
-            opacity: 0.75,
-            gradient: [
-                'rgba(0, 128, 0, 0)',
-                'rgba(0, 200, 0, 1)',
-                'rgba(255, 165, 0, 1)',
-                'rgba(255, 69, 0, 1)',
-                'rgba(220, 38, 38, 1)',
-                'rgba(127, 0, 0, 1)',
-            ],
-        })
+        // heatmapRef stores active Circle overlays (HeatmapLayer is deprecated since May 2025)
+        heatmapRef.current = []
     }, [mapsReady])
 
     // ------------------------------------------------------------------
-    // Step 3 — Refresh heatmap whenever reports change
+    // Step 3 — Render circles whenever reports change
     // ------------------------------------------------------------------
     const refreshHeatmap = useCallback((docs) => {
-        if (!heatmapRef.current || !window.google?.maps) return
-        const points = docs
-            .filter((r) => r.lat != null && r.lng != null)
-            .map((r) => ({
-                location: new window.google.maps.LatLng(r.lat, r.lng),
-                weight: r.severity ?? 1,
-            }))
-        heatmapRef.current.setData(points)
+        if (!mapRef.current || !window.google?.maps) return
+
+        // Clear previous circles
+        if (Array.isArray(heatmapRef.current)) {
+            heatmapRef.current.forEach((c) => c.setMap(null))
+        }
+        heatmapRef.current = []
+
+        const validDocs = docs.filter((r) => r.lat != null && r.lng != null)
+
+        // Color based on severity score (0–10)
+        function severityColor(sev) {
+            const s = parseFloat(sev ?? 0)
+            if (s >= 8) return { fill: '#7f0000', stroke: '#dc2626' }
+            if (s >= 6) return { fill: '#dc2626', stroke: '#ef4444' }
+            if (s >= 4) return { fill: '#f97316', stroke: '#fb923c' }
+            if (s >= 2) return { fill: '#eab308', stroke: '#facc15' }
+            return     { fill: '#22c55e', stroke: '#4ade80' }
+        }
+
+        validDocs.forEach((r) => {
+            const { fill, stroke } = severityColor(r.severity)
+            const circle = new window.google.maps.Circle({
+                center: { lat: r.lat, lng: r.lng },
+                radius: 180 + (parseFloat(r.severity ?? 0) * 30), // 180–480m
+                fillColor: fill,
+                fillOpacity: 0.45,
+                strokeColor: stroke,
+                strokeOpacity: 0.9,
+                strokeWeight: 1.5,
+                map: mapRef.current,
+            })
+            heatmapRef.current.push(circle)
+        })
     }, [])
 
     useEffect(() => {
@@ -324,12 +338,13 @@ export default function Heatmap() {
                 {/* Legend */}
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs"
                     style={{ color: 'var(--color-muted)' }}>
-                    <span className="font-semibold uppercase tracking-wide">Heat intensity:</span>
+                    <span className="font-semibold uppercase tracking-wide">Severity:</span>
                     {[
-                        { label: 'Low', color: '#22c55e' },
-                        { label: 'Moderate', color: '#f97316' },
-                        { label: 'Severe', color: '#dc2626' },
-                        { label: 'Critical', color: '#7f0000' },
+                        { label: 'Low (0–2)', color: '#22c55e' },
+                        { label: 'Moderate (2–4)', color: '#eab308' },
+                        { label: 'High (4–6)', color: '#f97316' },
+                        { label: 'Severe (6–8)', color: '#dc2626' },
+                        { label: 'Critical (8–10)', color: '#7f0000' },
                     ].map(({ label, color }) => (
                         <span key={label} className="flex items-center gap-1.5">
                             <span className="w-3 h-3 rounded-full" style={{ background: color }} />

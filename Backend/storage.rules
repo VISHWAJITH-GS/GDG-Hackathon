@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Heritage restorations — public read
+    match /heritage-restorations/{imageId} {
+      allow read: if true;
+      allow write: if false; // Only backend via Admin SDK
+    }
+    // All other paths — authenticated only
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
