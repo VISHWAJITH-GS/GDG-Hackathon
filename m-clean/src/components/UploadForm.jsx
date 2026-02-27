@@ -14,12 +14,12 @@ import { useState, useRef, useCallback } from 'react'
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db, storage } from '../firebase'
+import { FUNCTIONS_BASE, FUNCTIONS_CONFIGURED } from '../config'
 
 // ── Constants ──────────────────────────────────────────────────
 const ACCEPTED_MIME = 'image/jpeg,image/png,image/webp'
 const MAX_FILE_BYTES = 5 * 1024 * 1024 // 5 MB
 const FIRESTORE_COL = 'reports'
-const FUNCTIONS_BASE = import.meta.env.VITE_FUNCTIONS_BASE_URL ?? ''
 
 // ── Helpers ────────────────────────────────────────────────────
 function formatBytes(bytes) {
@@ -31,7 +31,7 @@ function formatBytes(bytes) {
 // Non-blocking: trigger analyzeWaste after upload.
 // Fires and forgets — upload success does NOT depend on this call.
 async function triggerAnalyzeWaste(reportId, imageUrl, coords) {
-    if (!FUNCTIONS_BASE || FUNCTIONS_BASE.includes('YOUR_PROJECT_ID')) {
+    if (!FUNCTIONS_CONFIGURED) {
         console.info('[UploadForm] analyzeWaste skipped — VITE_FUNCTIONS_BASE_URL not configured.')
         return
     }

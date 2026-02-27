@@ -1,0 +1,45 @@
+// src/config.js
+// ---------------------------------------------------------------
+// Central environment configuration for M-Clean.
+// All env variables are read ONCE here and exported as constants.
+// Components import from here — never from import.meta.env directly.
+// ---------------------------------------------------------------
+
+// ── Raw values ─────────────────────────────────────────────────
+export const FUNCTIONS_BASE =
+    import.meta.env.VITE_FUNCTIONS_BASE_URL?.trim() ?? ''
+
+export const MAPS_API_KEY =
+    import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim() ?? ''
+
+// ── Validation flags ───────────────────────────────────────────
+export const FUNCTIONS_CONFIGURED =
+    !!FUNCTIONS_BASE &&
+    !FUNCTIONS_BASE.includes('YOUR_PROJECT_ID') &&
+    FUNCTIONS_BASE.startsWith('https://')
+
+export const MAPS_CONFIGURED =
+    !!MAPS_API_KEY &&
+    !MAPS_API_KEY.includes('YOUR_GOOGLE_MAPS') &&
+    MAPS_API_KEY.length > 10
+
+// ── Console warnings at module load time ──────────────────────
+if (!FUNCTIONS_CONFIGURED) {
+    console.error(
+        '[M-Clean] ⚠️  VITE_FUNCTIONS_BASE_URL is missing or invalid.\n' +
+        '           Add it to m-clean/.env:\n' +
+        '           VITE_FUNCTIONS_BASE_URL=https://REGION-PROJECT_ID.cloudfunctions.net'
+    )
+}
+
+if (!MAPS_CONFIGURED) {
+    console.error(
+        '[M-Clean] ⚠️  VITE_GOOGLE_MAPS_API_KEY is missing or invalid.\n' +
+        '           Add it to m-clean/.env:\n' +
+        '           VITE_GOOGLE_MAPS_API_KEY=your_key_here'
+    )
+}
+
+// ── Fixed constants ────────────────────────────────────────────
+export const NUM_WORKERS = 25
+export const NUM_TRUCKS = 8

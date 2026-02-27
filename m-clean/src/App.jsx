@@ -14,6 +14,7 @@
 import { BrowserRouter, Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import OfficerDashboard from './pages/OfficerDashboard'
+import { FUNCTIONS_CONFIGURED, MAPS_CONFIGURED } from './config'
 
 // ── Navigation items ──────────────────────────────────────────
 const NAV_ITEMS = [
@@ -46,6 +47,36 @@ function AshokaPillar() {
         )
       })}
     </svg>
+  )
+}
+
+// ── Env validation banner (shown when keys are missing) ──────────
+function EnvBanner() {
+  const missing = []
+  if (!FUNCTIONS_CONFIGURED) missing.push('VITE_FUNCTIONS_BASE_URL')
+  if (!MAPS_CONFIGURED) missing.push('VITE_GOOGLE_MAPS_API_KEY')
+  if (missing.length === 0) return null
+
+  return (
+    <div
+      role="alert"
+      style={{
+        background: '#fef3c7',
+        borderBottom: '1px solid #fcd34d',
+        color: '#78350f',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <span className="font-bold flex-shrink-0">⚠️ Configuration</span>
+        <span>
+          Missing env var{missing.length > 1 ? 's' : ''}:{' '}
+          {missing.map((k) => (
+            <code key={k} className="bg-amber-100 border border-amber-300 px-1 rounded mx-0.5">{k}</code>
+          ))}
+          — add to <code className="bg-amber-100 border border-amber-300 px-1 rounded">m-clean/.env</code>
+        </span>
+      </div>
+    </div>
   )
 }
 
@@ -169,7 +200,10 @@ function GovLayout({ children }) {
       {/* ── 5. Breadcrumb ── */}
       <Breadcrumb />
 
-      {/* ── 6. Page content ── */}
+      {/* ── 6. Env warning (only when keys are missing) ── */}
+      <EnvBanner />
+
+      {/* ── 7. Page content ── */}
       <main id="main-content" className="flex-1 bg-[var(--color-surface)]">
         {children}
       </main>

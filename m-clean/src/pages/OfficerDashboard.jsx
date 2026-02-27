@@ -16,14 +16,19 @@ import PredictionPanel from '../components/PredictionPanel'
 import WorkforcePanel from '../components/WorkforcePanel'
 import ReportPanel from '../components/ReportPanel'
 import Toast, { useToast } from '../components/Toast'
+import {
+    FUNCTIONS_BASE,
+    FUNCTIONS_CONFIGURED,
+    NUM_WORKERS,
+    NUM_TRUCKS,
+} from '../config'
 
-// ── Cloud Function config ───────────────────────────────────────
-const FUNCTIONS_BASE = import.meta.env.VITE_FUNCTIONS_BASE_URL ?? ''
-const NUM_WORKERS = 25
-const NUM_TRUCKS = 8
 
 // ── Shared fetch helper ─────────────────────────────────────────
 async function callFn(name, body = {}) {
+    if (!FUNCTIONS_CONFIGURED) {
+        throw new Error('VITE_FUNCTIONS_BASE_URL not configured — set it in .env to load live data.')
+    }
     const res = await fetch(`${FUNCTIONS_BASE}/${name}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
