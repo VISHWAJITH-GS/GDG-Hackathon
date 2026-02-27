@@ -60,6 +60,38 @@ function HeroButton({ to, children, variant = 'primary' }) {
     </Link>
   )
 }
+function ExternalHeroButton({ href, children, variant = 'primary' }) {
+  const cls = variant === 'primary'
+    ? [
+        'bg-[#104080] text-white border border-[#104080]',
+        'shadow-[0_4px_14px_rgba(16,64,128,0.30)]',
+        'hover:bg-[#0a3468] hover:border-[#0a3468] hover:-translate-y-px',
+        'hover:shadow-[0_6px_20px_rgba(16,64,128,0.45)]',
+        'active:!bg-[#082850] active:translate-y-0',
+      ].join(' ')
+    : [
+        'bg-white/10 text-white border border-white/40 backdrop-blur-sm',
+        'hover:bg-white/20 hover:border-white/60 hover:-translate-y-px',
+        'hover:shadow-[0_6px_20px_rgba(255,255,255,0.12)]',
+        'active:!bg-white/30 active:translate-y-0',
+      ].join(' ')
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={[
+        'inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg',
+        'font-semibold text-base tracking-wide transition-all duration-200 active:scale-95',
+        cls,
+      ].join(' ')}
+    >
+      {children}
+    </a>
+  )
+}
+
 
 // â”€â”€ Section label (small caps with saffron bar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SectionLabel({ children }) {
