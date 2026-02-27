@@ -1,4 +1,13 @@
 rules_version = '2';
+// ---------------------------------------------------------------
+// M-Clean Firestore Security Rules
+// ---------------------------------------------------------------
+// Role hierarchy (stored in users/{uid}.role):
+//   "citizen"      — public user: file and read own reports
+//   "municipality" — municipal officer: read/update all reports
+//   "admin"        — full access
+// ---------------------------------------------------------------
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -11,6 +20,12 @@ service cloud.firestore {
     function isOwner(uid) {
       return isSignedIn() && request.auth.uid == uid
     }
+    // Elevated roles — "admin" OR "municipality"
+    function isMunicipal() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && getUserDoc().data.role in ['admin', 'municipality']
+    }
     function isAdmin() {
       return isSignedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
@@ -22,32 +37,67 @@ service cloud.firestore {
         && getUserDoc().data.role == 'citizen'
     }
 
+    // ── User profiles ──────────────────────────────────────── 
     match /users/{uid} {
-      allow read:   if isOwner(uid) || isAdmin();
+      allow read:   if isOwner(uid) || isMunicipal();
       allow create: if isOwner(uid);
-      allow update: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
       allow delete: if false;
     }
 
+    // ── Reports (complaints) ───────────────────────────────── 
     match /reports/{reportId} {
       allow create: if isSignedIn()
                     && request.resource.data.created_by == request.auth.uid;
-      // Public read — the heatmap and landing page stats are visible to everyone
+      // Public read for heatmap / landing page stats
       allow read:   if true;
       allow list:   if true;
+      // Citizens: update own while pending; Municipal/Admin: update any
       allow update: if isSignedIn()
-                    && (isAdmin() || resource.data.created_by == request.auth.uid);
+                    && (
+                      isMunicipal()
+                      || resource.data.created_by == request.auth.uid
+                    );
       allow delete: if false;
     }
 
+    // ── Daily summaries (admin read-only) ──────────────────── 
     match /daily_summary/{docId} {
-      allow read:  if isAdmin();
+      allow read:  if isMunicipal();
       allow write: if false;
     }
 
+    // ── Predictions ────────────────────────────────────────── 
     match /predictions/{docId} {
       allow read:  if isSignedIn();
       allow write: if false;
+    }
+
+    // ── Notifications ──────────────────────────────────────── 
+    match /notifications/{notifId} {
+      allow read:   if isSignedIn()
+                    && (resource.data.uid == request.auth.uid || isMunicipal());
+      allow create: if isMunicipal();
+      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // ── Heatmap aggregates ─────────────────────────────────── 
+    match /heatmap/{docId} {
+      allow read:  if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // ── Leaderboard ────────────────────────────────────────── 
+    match /leaderboard/{docId} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
+    // ── Workforce / dispatch records ───────────────────────── 
+    match /workforce/{docId} {
+      allow read:  if isMunicipal();
+      allow write: if isMunicipal();
     }
   }
 }

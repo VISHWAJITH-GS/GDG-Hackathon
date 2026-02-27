@@ -20,7 +20,9 @@ import RegisterPage from './pages/RegisterPage'
 import CitizenDashboard from './pages/CitizenDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminLoginPage from './pages/AdminLoginPage'
+import AdminLogin from './pages/AdminLogin'
 import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRouteAdmin from './components/ProtectedRouteAdmin'
 import { AuthProvider } from './context/AuthContext'
 import { FUNCTIONS_CONFIGURED, MAPS_CONFIGURED } from './config'
 
@@ -257,7 +259,11 @@ export default function App() {
           {/* ── Auth routes (no layout) ── */}
           <Route path="/login"     element={<LoginPage />} />
           <Route path="/register"  element={<RegisterPage />} />
-          <Route path="/admin-mc"  element={<AdminLoginPage />} />
+
+          {/* ── Admin / Municipality login ── */}
+          <Route path="/admin"    element={<AdminLogin />} />
+          {/* Legacy admin login alias */}
+          <Route path="/admin-mc" element={<AdminLoginPage />} />
 
           {/* ── Protected citizen dashboard ── */}
           <Route path="/citizen" element={
@@ -266,11 +272,11 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* ── Protected admin dashboard ── */}
-          <Route path="/admin" element={
-            <ProtectedRoute role="admin">
+          {/* ── Protected admin/municipality dashboard ── */}
+          <Route path="/admin/dashboard" element={
+            <ProtectedRouteAdmin>
               <AdminDashboard />
-            </ProtectedRoute>
+            </ProtectedRouteAdmin>
           } />
 
           <Route path="*" element={<Navigate to="/" replace />} />
