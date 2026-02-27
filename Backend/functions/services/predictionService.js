@@ -21,7 +21,7 @@ async function getPredictedRisk(ward) {
   // Fetch latest 100 complaints ordered by time â€” no ward filter needed
   // because analyze-image does not store a ward field.
   const snapshot = await db
-    .collection("complaints")
+    .collection("reports")
     .orderBy("createdAt", "desc")
     .limit(100)
     .get();

@@ -1,4 +1,4 @@
-﻿"use strict";
+"use strict";
 
 require("dotenv").config();
 
@@ -11,27 +11,27 @@ const cors       = require("cors");
 const speech     = require("@google-cloud/speech");
 const { v4: uuidv4 } = require("uuid");
 
-// â”€â”€ Firebase Admin (uses Application Default Credentials in Cloud Functions) â”€â”€
+// ── Firebase Admin (uses Application Default Credentials in Cloud Functions) ──
 admin.initializeApp();
 const db = admin.firestore();
 
-// â”€â”€ Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Services ──────────────────────────────────────────────────────────────────
 const { analyzeWasteImage, classifyAudioComplaint } = require("./services/aiService");
 const { verifyCleanup }   = require("./services/verificationService");
 const { getPredictedRisk } = require("./services/predictionService");
 const { isHazardous, handleHazard } = require("./services/hazardService");
 
-// â”€â”€ Utils â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Utils ─────────────────────────────────────────────────────────────────────
 const { analyzeProximity, computePriorityScore } = require("./utils/distance");
 
-// â”€â”€ Express App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Express App ───────────────────────────────────────────────────────────────
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json({ limit: "20mb" })); // base64 images can be large
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // Middleware helpers
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 
 /** Wraps async route handlers to forward errors to the error middleware. */
 const asyncHandler = (fn) => (req, res, next) =>
@@ -51,9 +51,9 @@ function requireFields(fields) {
   };
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /health
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 app.get("/health", (req, res) => {
   res.json({
     status: "ok",
@@ -63,50 +63,50 @@ app.get("/health", (req, res) => {
   });
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // POST /analyze-image
 //
 // Accepts a waste photo with GPS coordinates.
 // 1. Computes proximity to Meenakshi Temple / Vaigai River using geolib
 // 2. Passes image + zone context to Gemini 1.5 Flash
 // 3. Saves complaint to Firestore
-// 4. If hazard detected â†’ triggers hazardService pipeline
+// 4. If hazard detected → triggers hazardService pipeline
 //
 // Body: { imageBase64: string, latitude: number, longitude: number }
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 app.post(
   "/analyze-image",
   requireFields(["imageBase64", "latitude", "longitude"]),
   asyncHandler(async (req, res) => {
-    const { imageBase64, latitude, longitude } = req.body;
+    const { reportId, imageBase64, latitude, longitude } = req.body;
 
-    // Step 1 â€” Compute zone and priority using geolib (free, no API key)
+    // Step 1 — Compute zone and priority using geolib (free, no API key)
     const proximity       = analyzeProximity(latitude, longitude);
     const locationZone    = proximity.locationZone;
 
-    // Step 2 â€” AI analysis (priority_score injected into the prompt)
+    // Step 2 — AI analysis (priority_score injected into the prompt)
     // We use a placeholder severity of 5 to calculate initial priority,
     // then recalculate after the AI returns its severity_score.
     const analysis = await analyzeWasteImage(
       imageBase64,
       locationZone,
-      0 // placeholder â€” overridden below
+      0 // placeholder — overridden below
     );
 
-    // Step 3 â€” Override with server-authoritative priority score
+    // Step 3 — Override with server-authoritative priority score
     analysis.priority_score = computePriorityScore(
       analysis.severity_score,
       proximity.nearestSite.distanceMeters
     );
     analysis.location_zone = locationZone; // Ensure server value wins
 
-    // Step 4 â€” Persist complaint to Firestore
-    const complaintId = uuidv4();
-    const complaintDoc = {
-      complaintId,
+    // Step 4 — Persist complaint to Firestore
+    const docId = reportId || uuidv4();
+    const analysisFields = {
+
       source: "image",
-      latitude,
-      longitude,
+
+
       waste_type:     analysis.waste_type,
       severity_score: analysis.severity_score,
       priority_score: analysis.priority_score,
@@ -115,17 +115,22 @@ app.post(
       recommended_action: analysis.recommended_action,
       confidence:     analysis.confidence,
       status:         "Open",
-      createdAt:      new Date().toISOString(),
+      ai_analyzed_at: new Date().toISOString(),
     };
 
-    await db.collection("complaints").doc(complaintId).set(complaintDoc);
-    logger.info("/analyze-image: saved complaint", { complaintId, locationZone });
+    const docRef = db.collection("reports").doc(docId);
+    if (reportId) {
+      await docRef.update(analysisFields);
+    } else {
+      await docRef.set({ complaintId: docId, latitude, longitude, ...analysisFields, createdAt: new Date().toISOString() });
+    }
+    logger.info("/analyze-image: updated report", { docId, locationZone });
 
-    // Step 5 â€” Hazard detection (agentic pipeline)
+    // Step 5 — Hazard detection (agentic pipeline)
     let hazardResponse = null;
     if (isHazardous(analysis)) {
       hazardResponse = await handleHazard(analysis, latitude, longitude, locationZone);
-      await db.collection("complaints").doc(complaintId).update({
+      await docRef.update({
         status: "Escalated",
         hazardAlertId: hazardResponse.alert_id,
       });
@@ -133,7 +138,7 @@ app.post(
 
     res.status(200).json({
       success:     true,
-      complaintId,
+      complaintId: docId,
       analysis,
       proximity: {
         nearestLandmark:  proximity.nearestSite.name,
@@ -145,14 +150,14 @@ app.post(
   })
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // POST /verify-cleanup
 //
 // Proof of Work: compares before/after images using Gemini 1.5 Pro.
 // Detects fraud (different location, hidden trash, cropping).
 //
 // Body: { beforeImageBase64: string, afterImageBase64: string }
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 app.post(
   "/verify-cleanup",
   requireFields(["beforeImageBase64", "afterImageBase64"]),
@@ -173,14 +178,14 @@ app.post(
   })
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // POST /analyze-audio
 //
 // 1. Transcribes Tamil speech using Google Speech-to-Text (ta-IN)
 // 2. Classifies the complaint using Gemini 1.5 Flash
 //
 // Body: { audioBase64: string, encoding?: string, sampleRateHertz?: number }
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 app.post(
   "/analyze-audio",
   requireFields(["audioBase64"]),
@@ -191,7 +196,7 @@ app.post(
       sampleRateHertz = 16000,
     } = req.body;
 
-    // Step 1 â€” Transcribe with Google Speech-to-Text (Tamil â€” India)
+    // Step 1 — Transcribe with Google Speech-to-Text (Tamil — India)
     const speechClient = new speech.SpeechClient();
 
     const [sttResponse] = await speechClient.recognize({
@@ -207,8 +212,8 @@ app.post(
         speechContexts: [
           {
             phrases: [
-              "à®•à¯à®ªà¯à®ªà¯ˆ", "à®¨à®¾à®±à¯à®¤à¯", "à®µà®¾à®´à¯ˆ à®‡à®²à¯ˆ", "à®ªà¯‚ à®®à®¾à®²à¯ˆ",
-              "à®•à®´à®¿à®µà®Ÿà¯ˆ", "à®¤à®£à¯à®£à¯€à®°à¯", "à®¨à®¾à®¯à¯",
+              "குப்பை", "நாறுது", "வாழை இலை", "பூ மாலை",
+              "கழிவடை", "தண்ணீர்", "நாய்",
               "kuppai", "naaruthu", "vazhai illai",
             ],
             boost: 15,
@@ -229,7 +234,7 @@ app.post(
       });
     }
 
-    // Step 2 â€” Classify with Gemini 1.5 Flash
+    // Step 2 — Classify with Gemini 1.5 Flash
     const classification = await classifyAudioComplaint(transcript);
 
     logger.info("/analyze-audio: classified", {
@@ -245,12 +250,12 @@ app.post(
   })
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /predict-risk?ward=12
 //
 // Fetches last 90 days of Firestore complaints for the given ward,
-// then uses Gemini 1.5 Flash to predict a risk score (0.0â€“1.0).
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// then uses Gemini 1.5 Flash to predict a risk score (0.0–1.0).
+// ─────────────────────────────────────────────────────────────────────────────
 app.get(
   "/predict-risk",
   asyncHandler(async (req, res) => {
@@ -285,9 +290,9 @@ app.get(
   })
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// 404 â€” unknown routes
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// 404 — unknown routes
+// ─────────────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -295,9 +300,9 @@ app.use((req, res) => {
   });
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Global error handler â€” catches all async errors
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
+// Global error handler — catches all async errors
+// ─────────────────────────────────────────────────────────────────────────────
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   logger.error("Unhandled error", {
@@ -315,10 +320,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 // Export as Firebase Cloud Function
 // Region: us-central1 | Memory: 1GiB | Timeout: 540s (Gemini can be slow)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 exports.api = onRequest(
   { region: "us-central1", memory: "1GiB", timeoutSeconds: 540, cors: true },
   app

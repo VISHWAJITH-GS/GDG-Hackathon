@@ -48,6 +48,7 @@ async function triggerAnalyzeWaste(reportId, imageFile, coords) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                reportId,
                 imageBase64,
                 latitude: coords.latitude,
                 longitude: coords.longitude,

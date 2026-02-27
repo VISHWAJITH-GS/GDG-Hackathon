@@ -31,7 +31,7 @@ async function saveComplaint(complaintData) {
     resolvedAt: null,
   };
 
-  await db.collection("complaints").doc(complaintId).set(docData);
+  await db.collection("reports").doc(complaintId).set(docData);
 
   console.info("Complaint saved", { complaintId, ward: complaintData.wardNumber });
 
@@ -45,7 +45,7 @@ async function saveComplaint(complaintData) {
  * @returns {Promise<object|null>}
  */
 async function getComplaintById(complaintId) {
-  const doc = await db.collection("complaints").doc(complaintId).get();
+  const doc = await db.collection("reports").doc(complaintId).get();
   if (!doc.exists) return null;
   return doc.data();
 }
@@ -59,7 +59,7 @@ async function getComplaintById(complaintId) {
  */
 async function updateComplaintStatus(complaintId, status, additionalFields = {}) {
   await db
-    .collection("complaints")
+    .collection("reports")
     .doc(complaintId)
     .update({
       status,
@@ -84,7 +84,7 @@ async function getWardComplaintHistory(wardNumber, daysBack = 90) {
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
   const snapshot = await db
-    .collection("complaints")
+    .collection("reports")
     .where("wardNumber", "==", wardNumber)
     .where("createdAt", ">=", cutoffDate.toISOString())
     .orderBy("createdAt", "desc")

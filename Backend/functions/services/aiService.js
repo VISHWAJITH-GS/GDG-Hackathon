@@ -8,13 +8,12 @@ if (!GEMINI_API_KEY) {
   console.warn("[aiService] GEMINI_API_KEY is not set in environment.");
 }
 
-// Single client â€” reused across warm invocations
-// v1 uses the stable GA endpoint where gemini-2.0-flash is available
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY, { apiVersion: "v1" });
+// Single client — reused across warm invocations
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-// Gemini 2.0 Flash — fast, cost-efficient, great for structured JSON tasks
+// Gemini 2.5 Flash — fast, cost-efficient, great for structured JSON tasks
 const flashModel = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
+  model: "gemini-2.5-flash",
   generationConfig: {
     temperature: 0.1,
     topP: 0.8,
