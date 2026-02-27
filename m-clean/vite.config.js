@@ -49,10 +49,10 @@ export default defineConfig({
         navigateFallbackAllowlist: [/^(?!\/__)/],
       },
 
-      // Dev options — keep SW disabled, but serve the manifest so the
-      // browser doesn't log a manifest syntax error in the console.
+      // Dev options — serve the manifest in dev so the browser doesn't
+      // log a manifest syntax error in the console.
       devOptions: {
-        enabled: false,
+        enabled: true,
         type: 'module',
       },
     }),

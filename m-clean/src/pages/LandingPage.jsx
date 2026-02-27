@@ -1,7 +1,7 @@
 // src/pages/LandingPage.jsx
 // ─────────────────────────────────────────────────────────────
-// M-Clean �� AI-Powered Civic Sanitation Portal
-// Public landing page for hackathon demo � Madurai, Tamil Nadu
+// M-Clean �� AI-Powered Civic Sanitation Portal
+// Public landing page for hackathon demo � Madurai, Tamil Nadu
 //
 // Sections:
 //   1. Hero
@@ -24,7 +24,7 @@ import {
   HiCamera, HiCpuChip, HiChartBar, HiCheckCircle, HiClock,
   HiClipboardDocument, HiArrowTrendingUp, HiSparkles, HiTruck,
   HiBolt, HiMapPin, HiFlag,
-  HiRocketLaunch, HiGlobeAlt, HiServer,
+  HiRocketLaunch, HiGlobeAlt, HiServer, HiMicrophone,
 } from 'react-icons/hi2'
 
 // ── Ashoka Chakra SVG (decorative) ───────────────────────────
@@ -336,7 +336,7 @@ function BeforeAfterSection() {
           <BeforeAfterCard type="after" />
         </div>
 
-        {/* Arrow bridge � desktop only */}
+        {/* Arrow bridge � desktop only */}
         <div className="hidden md:flex items-center justify-center mt-6 gap-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-gov-700)]">
             <HiCpuChip className="w-4 h-4" aria-hidden="true" />
@@ -517,7 +517,7 @@ function CTABanner() {
           {[
             { icon: <HiBolt className="w-3.5 h-3.5" />, label: 'Powered by Google Firebase' },
             { icon: <HiMapPin className="w-3.5 h-3.5" />, label: 'Google Maps Platform' },
-            { icon: <HiCpuChip className="w-3.5 h-3.5" />, label: 'Vertex AI �� Vision API' },
+            { icon: <HiCpuChip className="w-3.5 h-3.5" />, label: 'Vertex AI �� Vision API' },
             { icon: <HiFlag className="w-3.5 h-3.5" />, label: 'Swachh Bharat Mission' },
             { icon: <HiGlobeAlt className="w-3.5 h-3.5" />, label: 'maduraicorporation.co.in' },
           ].map(({ icon, label }) => (
@@ -541,8 +541,8 @@ function StatTicker({ stats }) {
     `${stats.cleared.toLocaleString('en-IN')} cleanups verified`,
     `${stats.rate}% clearance rate`,
     `${stats.pending.toLocaleString('en-IN')} complaints pending`,
-    'Corporation of Madurai �� Est. 1866',
-    '100 Wards �� 147.99 Sq.Km �� 5 Zones',
+    'Corporation of Madurai �� Est. 1866',
+    '100 Wards �� 147.99 Sq.Km �� 5 Zones',
   ]
 
   return (
