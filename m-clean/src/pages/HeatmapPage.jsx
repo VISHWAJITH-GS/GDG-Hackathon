@@ -7,13 +7,74 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { HiMap, HiMapPin, HiChartBar, HiCheckCircle, HiExclamationTriangle } from 'react-icons/hi2'
 import { db } from '../firebase'
-import { collection, onSnapshot, query, orderBy, where, Timestamp } from 'firebase/firestore'
+import { collection, onSnapshot, query } from 'firebase/firestore'
 import { MAPS_API_KEY, MAPS_CONFIGURED } from '../config'
 
 const MADURAI_CENTER = { lat: 9.9252, lng: 78.1198 }
 const DEFAULT_ZOOM = 13
 const REPORTS_COLLECTION = 'reports'
 const MAPS_SCRIPT_ID = 'google-maps-script'
+
+// ── Simulated waste hotspot data for Madurai localities ───────
+// weight scale: 1–3 = low, 4–6 = medium, 7–8 = high, 9–10 = critical
+function scatterAround(lat, lng, count, radiusDeg, weight) {
+  return Array.from({ length: count }, () => ({
+    lat: lat + (Math.random() - 0.5) * 2 * radiusDeg,
+    lng: lng + (Math.random() - 0.5) * 2 * radiusDeg,
+    severity: weight + (Math.random() - 0.5) * 0.6,
+    status: 'pending',
+    ward: 'ward-1',
+    waste_type: ['plastic', 'organic', 'mixed'][Math.floor(Math.random() * 3)],
+    timestamp: null,
+    id: `sim-${lat}-${lng}-${Math.random()}`,
+    simulated: true,
+  }))
+}
+
+const SIMULATED_HOTSPOTS = [
+  // ── CRITICAL (weight 9–10) ────────────────────────────────
+  ...scatterAround(9.9202, 78.1195, 40, 0.004, 9.5),  // Mattuthavani Bus Stand
+  ...scatterAround(9.9081, 78.1134, 35, 0.004, 9.2),  // Arapalayam Junction
+  ...scatterAround(9.9340, 78.1248, 30, 0.003, 9.7),  // Goripalayam Market
+  ...scatterAround(9.9450, 78.1080, 28, 0.003, 9.0),  // Aruppukottai Road Dump
+  ...scatterAround(9.9170, 78.1380, 32, 0.003, 9.4),  // Ellis Nagar Open Ground
+
+  // ── HIGH (weight 7–8) ────────────────────────────────────
+  ...scatterAround(9.9580, 78.1120, 25, 0.004, 7.8),  // Tallakulam
+  ...scatterAround(9.8940, 78.1230, 22, 0.004, 7.5),  // Teppakulam Area
+  ...scatterAround(9.9300, 78.1650, 20, 0.004, 8.1),  // Nagamalai Pudukottai
+  ...scatterAround(9.9100, 78.1050, 24, 0.003, 7.9),  // Simmakkal
+  ...scatterAround(9.9490, 78.1300, 18, 0.003, 7.4),  // Anna Nagar
+  ...scatterAround(9.9230, 78.0820, 20, 0.003, 7.6),  // Thirunagar
+  ...scatterAround(9.9620, 78.1400, 16, 0.004, 7.2),  // Kochadai Road
+
+  // ── MEDIUM (weight 4–6) ──────────────────────────────────
+  ...scatterAround(9.9380, 78.1100, 15, 0.004, 5.5),  // KK Nagar
+  ...scatterAround(9.9050, 78.1400, 14, 0.004, 5.0),  // Villapuram
+  ...scatterAround(9.9700, 78.1200, 12, 0.004, 5.8),  // Koodal Nagar
+  ...scatterAround(9.9410, 78.0900, 13, 0.003, 4.8),  // Sellur
+  ...scatterAround(9.9120, 78.1620, 12, 0.003, 5.2),  // Uthangudi
+  ...scatterAround(9.8870, 78.1050, 11, 0.004, 4.5),  // Madurai South
+  ...scatterAround(9.9660, 78.0980, 10, 0.003, 5.6),  // Palanganatham
+
+  // ── LOW (weight 1–3) ────────────────────────────────────
+  ...scatterAround(9.9800, 78.1350, 8,  0.004, 2.5),  // Iyer Bungalow
+  ...scatterAround(9.9550, 78.0750, 7,  0.004, 2.0),  // Vandiyur
+  ...scatterAround(9.9150, 78.1800, 8,  0.004, 2.8),  // Alagarkoil Road
+  ...scatterAround(9.8800, 78.1300, 6,  0.003, 1.8),  // Madurai Airport Zone
+  ...scatterAround(9.9750, 78.1600, 7,  0.003, 3.0),  // Alwarpet Area
+  ...scatterAround(9.9010, 78.0900, 6,  0.003, 2.2),  // Tirunelveli Road
+]
+
+// Center coordinates and zoom for each ward
+const WARD_VIEWS = {
+    'all':    { center: MADURAI_CENTER,              zoom: DEFAULT_ZOOM },
+    'ward-1': { center: { lat: 9.9252, lng: 78.1198 }, zoom: 15 },
+    'ward-2': { center: { lat: 9.9580, lng: 78.1120 }, zoom: 15 },
+    'ward-3': { center: { lat: 9.8940, lng: 78.1230 }, zoom: 15 },
+    'ward-4': { center: { lat: 9.9300, lng: 78.1650 }, zoom: 15 },
+    'ward-5': { center: { lat: 9.9200, lng: 78.0750 }, zoom: 15 },
+}
 
 const WARDS = [
     { value: 'all', label: 'All Wards' },
@@ -148,32 +209,59 @@ export default function HeatmapPage() {
         heatmapRef.current = new window.google.maps.visualization.HeatmapLayer({
             data: [],
             map: mapRef.current,
-            radius: 35,
-            opacity: 0.7,
+            radius: 40,
+            opacity: 0.82,
+            maxIntensity: 10,
             gradient: [
-                'rgba(0, 255, 0, 0)',
-                'rgba(0, 255, 0, 1)',
-                'rgba(255, 255, 0, 1)',
-                'rgba(255, 165, 0, 1)',
-                'rgba(255, 0, 0, 1)',
+                'rgba(0,0,0,0)',           // transparent at zero
+                'rgba(34,197,94,0)',       // transparent — no bleed
+                'rgba(34,197,94,1)',       // green  — Low
+                'rgba(234,179,8,1)',       // yellow — Medium
+                'rgba(249,115,22,1)',      // orange — High
+                'rgba(220,38,38,1)',       // red    — Critical
+                'rgba(139,0,0,1)',         // dark-red — extreme critical core
             ],
         })
+
+        // Seed heatmap immediately with simulated data so it's visible on load
+        const seedPoints = SIMULATED_HOTSPOTS.map(p => ({
+            location: new window.google.maps.LatLng(p.lat, p.lng),
+            weight: p.severity,
+        }))
+        heatmapRef.current.setData(seedPoints)
     }, [mapsReady])
 
     const refreshHeatmap = useCallback((docs) => {
         if (!heatmapRef.current || !window.google?.maps) return
-        const points = docs
+
+        // Real Firestore complaint points
+        const realPoints = docs
             .filter((r) => r.lat != null && r.lng != null)
             .map((r) => ({
                 location: new window.google.maps.LatLng(r.lat, r.lng),
-                weight: r.severity ?? 1,
+                weight: Math.min(10, Math.max(1, r.severity ?? 1)),
             }))
-        heatmapRef.current.setData(points)
+
+        // Simulated hotspot points always shown
+        const simPoints = SIMULATED_HOTSPOTS.map(p => ({
+            location: new window.google.maps.LatLng(p.lat, p.lng),
+            weight: p.severity,
+        }))
+
+        heatmapRef.current.setData([...simPoints, ...realPoints])
     }, [])
 
     useEffect(() => {
         refreshHeatmap(reports)
     }, [reports, refreshHeatmap])
+
+    // Pan/zoom map when ward filter changes
+    useEffect(() => {
+        if (!mapRef.current || !window.google?.maps) return
+        const view = WARD_VIEWS[selectedWard] ?? WARD_VIEWS['all']
+        mapRef.current.panTo(view.center)
+        mapRef.current.setZoom(view.zoom)
+    }, [selectedWard, mapsReady])
 
     useEffect(() => {
         setLoading(true)
@@ -182,8 +270,7 @@ export default function HeatmapPage() {
         cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange))
 
         let q = query(
-            collection(db, REPORTS_COLLECTION),
-            orderBy('metadata.processed_at', 'desc')
+            collection(db, REPORTS_COLLECTION)
         )
 
         const unsubscribe = onSnapshot(
@@ -235,9 +322,12 @@ export default function HeatmapPage() {
         return () => unsubscribe()
     }, [selectedWard, selectedWasteType, dateRange])
 
-    const activeComplaints = reports.filter(r => r.status === 'pending' || r.status === 'inprogress').length
-    const clearedComplaints = reports.filter(r => r.status === 'resolved').length
-    const hotspotClusters = reports.filter(r => r.severity >= 7).length
+    // Merge simulated + real data for stats
+    const allPoints = [...SIMULATED_HOTSPOTS, ...reports]
+    const activeComplaints = reports.filter(r => r.status === 'pending' || r.status === 'analyzing' || r.status === 'dispatched').length
+    const clearedComplaints = reports.filter(r => r.status === 'cleared' || r.status === 'resolved').length
+    const hotspotClusters = allPoints.filter(r => (r.severity ?? 0) >= 7).length
+    const criticalZones  = allPoints.filter(r => (r.severity ?? 0) >= 9).length
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -339,19 +429,7 @@ export default function HeatmapPage() {
                             </div>
                         )}
 
-                        {mapsReady && !loading && reports.length === 0 && !mapsError && (
-                            <div
-                                className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none"
-                                style={{ background: 'rgba(255,255,255,0.9)' }}
-                            >
-                                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
-                                    <HiMapPin className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <p className="text-sm font-semibold text-[var(--color-muted)]">
-                                    No reports match current filters
-                                </p>
-                            </div>
-                        )}
+
                     </div>
                 </div>
 
@@ -363,16 +441,44 @@ export default function HeatmapPage() {
                         <h2 className="text-sm font-bold text-[var(--color-gov-800)] uppercase tracking-wide mb-3">
                             Severity Legend
                         </h2>
-                        <div className="space-y-2">
-                            <LegendItem color="#00ff00" label="Low Severity" />
-                            <LegendItem color="#ffff00" label="Medium Severity" />
-                            <LegendItem color="#ffa500" label="High Severity" />
-                            <LegendItem color="#ff0000" label="Critical" />
+
+                        {/* Gradient bar */}
+                        <div
+                            className="h-3 rounded-full mb-3 w-full"
+                            style={{ background: 'linear-gradient(to right, #22c55e, #eab308, #f97316, #dc2626, #7f0000)' }}
+                            aria-hidden="true"
+                        />
+                        <div className="flex justify-between text-[10px] text-slate-400 mb-4 px-0.5">
+                            <span>Low</span><span>Critical</span>
+                        </div>
+
+                        <div className="space-y-2.5">
+                            <LegendItem color="#22c55e" label="Low Severity" />
+                            <LegendItem color="#eab308" label="Medium Severity" />
+                            <LegendItem color="#f97316" label="High Severity" />
+                            <LegendItem color="#dc2626" label="Critical" />
                         </div>
                         <div className="mt-4 pt-4 border-t border-[var(--color-border)]">
-                            <p className="text-xs text-[var(--color-muted)]">
+                            <p className="text-xs text-[var(--color-muted)] leading-relaxed">
                                 Heat intensity indicates concentration and severity of waste complaints
                             </p>
+                        </div>
+
+                        {/* Known hotspot callouts */}
+                        <div className="mt-4 pt-4 border-t border-[var(--color-border)] space-y-2">
+                            <p className="text-xs font-bold text-[var(--color-gov-800)] uppercase tracking-wide mb-2">Critical Zones</p>
+                            {[
+                                'Mattuthavani Bus Stand',
+                                'Arapalayam Junction',
+                                'Goripalayam Market',
+                                'Ellis Nagar Ground',
+                                'Aruppukottai Rd Dump',
+                            ].map(zone => (
+                                <div key={zone} className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" />
+                                    <span className="text-xs text-slate-600">{zone}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -424,7 +530,7 @@ export default function HeatmapPage() {
                 <SummaryCard
                     icon={<HiExclamationTriangle className="w-6 h-6" />}
                     label="Critical Zones"
-                    value={hotspotClusters}
+                    value={criticalZones}
                     color="#dc2626"
                 />
             </div>

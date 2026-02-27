@@ -19,11 +19,13 @@ async function ensureCitizenDoc(firebaseUser) {
   const snap = await getDoc(ref)
   if (!snap.exists()) {
     await setDoc(ref, {
-      uid:        firebaseUser.uid,
-      name:       firebaseUser.displayName ?? '',
-      email:      firebaseUser.email ?? '',
-      role:       'citizen',
-      created_at: serverTimestamp(),
+      uid:                firebaseUser.uid,
+      name:               firebaseUser.displayName ?? '',
+      email:              firebaseUser.email ?? '',
+      role:               'citizen',
+      points:             0,
+      cleared_complaints: 0,
+      created_at:         serverTimestamp(),
     })
   }
 }
@@ -88,11 +90,13 @@ export default function RegisterPage() {
     try {
       const cred = await createUserWithEmailAndPassword(auth, form.email, form.password)
       await setDoc(doc(db, 'users', cred.user.uid), {
-        uid:        cred.user.uid,
-        name:       form.name.trim(),
-        email:      form.email.toLowerCase().trim(),
-        role:       'citizen',
-        created_at: serverTimestamp(),
+        uid:                cred.user.uid,
+        name:               form.name.trim(),
+        email:              form.email.toLowerCase().trim(),
+        role:               'citizen',
+        points:             0,
+        cleared_complaints: 0,
+        created_at:         serverTimestamp(),
       })
       // Sync userDoc into AuthContext immediately so ProtectedRoute doesn't spin forever
       await refreshUserDoc(cred.user.uid)

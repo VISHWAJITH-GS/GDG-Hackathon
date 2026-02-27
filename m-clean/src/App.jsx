@@ -23,6 +23,7 @@ import AdminLoginPage from './pages/AdminLoginPage'
 import AdminLogin from './pages/AdminLogin'
 import HeatmapPage from './pages/HeatmapPage'
 import DailyReportPage from './pages/DailyReportPage'
+import Leaderboard from './pages/Leaderboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProtectedRouteAdmin from './components/ProtectedRouteAdmin'
 import { AuthProvider } from './context/AuthContext'
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/report', label: 'File a Complaint', end: true },
   { to: '/map', label: 'Monitoring Map', end: true },
+  { to: '/leaderboard', label: 'Leaderboard', end: true },
   { to: '/daily-report', label: 'Daily Report', end: true },
   { to: '/login', label: 'Login', end: true },
 ]
@@ -257,6 +259,7 @@ export default function App() {
           <Route path="/report"   element={<GovLayout><Home /></GovLayout>} />
           <Route path="/map"          element={<GovLayout><HeatmapPage /></GovLayout>} />
           <Route path="/daily-report"  element={<GovLayout><DailyReportPage /></GovLayout>} />
+          <Route path="/leaderboard"   element={<GovLayout><Leaderboard /></GovLayout>} />
           <Route path="/dashboard"     element={<GovLayout><OfficerDashboard /></GovLayout>} />
 
           {/* ── Auth routes (no layout) ── */}

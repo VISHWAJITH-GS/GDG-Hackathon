@@ -39,9 +39,12 @@ service cloud.firestore {
 
     // ── User profiles ──────────────────────────────────────── 
     match /users/{uid} {
-      allow read:   if isOwner(uid) || isMunicipal();
+      // Public read — required for the Civic Impact Leaderboard
+      allow read:   if true;
       allow create: if isOwner(uid);
-      allow update: if isOwner(uid) || isAdmin();
+      // Citizens may update their own profile; admin/municipality may update
+      // any profile (needed to award points + increment cleared_complaints).
+      allow update: if isOwner(uid) || isMunicipal();
       allow delete: if false;
     }
 

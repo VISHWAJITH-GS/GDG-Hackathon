@@ -22,6 +22,7 @@ import { auth, db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import StatusBadge from '../components/StatusBadge'
 import { HiInboxArrowDown } from 'react-icons/hi2'
+import { awardPointsForClear } from '../utils/pointsService'
 
 const STATUS_TABS = ['all', 'pending', 'analyzing', 'dispatched', 'cleared']
 
@@ -363,6 +364,14 @@ export default function AdminDashboard() {
       status:     newStatus,
       updated_at: serverTimestamp(),
     })
+
+    // Award points when complaint is cleared — idempotent, safe to call every time
+    if (newStatus === 'cleared') {
+      const report = complaints.find(c => c.id === reportId)
+      if (report?.created_by) {
+        await awardPointsForClear(reportId, report.created_by)
+      }
+    }
   }
 
   const handleDispatch = useCallback(async (reportId, teamName) => {
