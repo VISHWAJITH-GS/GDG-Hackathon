@@ -24,7 +24,7 @@ import {
   HiCamera, HiCpuChip, HiChartBar, HiCheckCircle, HiClock,
   HiClipboardDocument, HiArrowTrendingUp, HiSparkles, HiTruck,
   HiBolt, HiLockClosed, HiMapPin, HiFlag,
-  HiRocketLaunch, HiGlobeAlt, HiServer,
+  HiRocketLaunch, HiGlobeAlt, HiServer, HiMicrophone,
 } from 'react-icons/hi2'
 
 // ── Ashoka Chakra SVG (decorative) ───────────────────────────
@@ -83,6 +83,39 @@ function HeroButton({ to, children, variant = 'primary' }) {
     >
       {children}
     </Link>
+  )
+}
+
+// ── External link hero button (for out-of-app URLs) ─────────
+function ExternalHeroButton({ href, children, variant = 'secondary' }) {
+  const cls = variant === 'primary'
+    ? [
+        'text-white border border-white/20 backdrop-blur-sm',
+        '[background:linear-gradient(160deg,rgba(21,87,160,0.88)_0%,rgba(10,52,104,0.94)_100%)]',
+        'shadow-[0_4px_14px_rgba(16,64,128,0.35),inset_0_1px_0_rgba(255,255,255,0.15)]',
+        'hover:[background:linear-gradient(160deg,rgba(26,107,191,0.92)_0%,rgba(16,64,128,1)_100%)]',
+        'hover:shadow-[0_6px_20px_rgba(16,64,128,0.45)] hover:-translate-y-px',
+      ].join(' ')
+    : [
+        'bg-white/10 text-white border border-white/30 backdrop-blur-sm',
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]',
+        'hover:bg-white/20 hover:-translate-y-px',
+        'active:!bg-orange-600/80 active:!border-orange-400/50 active:translate-y-0',
+      ].join(' ')
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={[
+        'inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg',
+        'font-semibold text-base tracking-wide transition-all duration-200 active:scale-95',
+        cls,
+      ].join(' ')}
+    >
+      {children}
+    </a>
   )
 }
 
@@ -298,6 +331,10 @@ function HeroSection() {
               <HiLockClosed className="w-5 h-5" aria-hidden="true" />
               Citizen Login
             </HeroButton>
+            <ExternalHeroButton href="http://localhost:3000" variant="primary">
+              <HiMicrophone className="w-5 h-5" aria-hidden="true" />
+              Voice Bot
+            </ExternalHeroButton>
           </div>
         </div>
       </div>
