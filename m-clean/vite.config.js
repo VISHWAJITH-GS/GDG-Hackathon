@@ -43,6 +43,7 @@ export default defineConfig({
       // Workbox — pre-cache all static assets for offline support
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB — allows large images like before/after photos
         // SPA: serve index.html for all navigation routes (React Router handles them client-side)
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^(?!\/__)/],
