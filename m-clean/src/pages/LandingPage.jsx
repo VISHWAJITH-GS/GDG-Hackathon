@@ -23,8 +23,13 @@ import BeforeAfterCard from '../components/landing/BeforeAfterCard'
 import {
   HiCamera, HiCpuChip, HiChartBar, HiCheckCircle, HiClock,
   HiClipboardDocument, HiArrowTrendingUp, HiSparkles, HiTruck,
+<<<<<<< HEAD
   HiBolt, HiMapPin, HiFlag,
   HiRocketLaunch, HiGlobeAlt, HiServer,
+=======
+  HiBolt, HiLockClosed, HiMapPin, HiFlag,
+  HiRocketLaunch, HiGlobeAlt, HiServer, HiMicrophone,
+>>>>>>> 121324a6224228d82ffbec9d54e51a690b0afcf2
 } from 'react-icons/hi2'
 
 // â”€â”€ Ashoka Chakra SVG (decorative) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -166,6 +171,10 @@ function HeroSection() {
               <HiMapPin className="w-5 h-5" aria-hidden="true" />
               Monitoring Map
             </HeroButton>
+            <ExternalHeroButton href="http://localhost:3000" variant="primary">
+              <HiMicrophone className="w-5 h-5" aria-hidden="true" />
+              Voice Bot
+            </ExternalHeroButton>
           </div>
 
           {/* Glassmorphic feature cards */}

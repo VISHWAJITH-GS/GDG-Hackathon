@@ -16,7 +16,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
-import { HiExclamationTriangle } from 'react-icons/hi2'
+import { HiExclamationTriangle, HiMicrophone } from 'react-icons/hi2'
 
 // ── Ensure Firestore citizen doc exists (Google new users) ──
 async function ensureCitizenDoc(firebaseUser) {
@@ -145,6 +145,21 @@ export default function LoginPage() {
             <p className="mt-1 text-xs text-slate-500 text-center">
               M-Clean — Municipal Cleanliness Portal · Government of India
             </p>
+            <a
+              href="http://localhost:3000"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold
+                         text-white border border-white/20 backdrop-blur-sm
+                         [background:linear-gradient(160deg,rgba(21,87,160,0.92)_0%,rgba(10,52,104,0.96)_100%)]
+                         shadow-[0_4px_14px_rgba(16,64,128,0.28),inset_0_1px_0_rgba(255,255,255,0.15)]
+                         hover:[background:linear-gradient(160deg,rgba(26,107,191,0.95)_0%,rgba(16,64,128,0.98)_100%)]
+                         hover:shadow-[0_6px_20px_rgba(16,64,128,0.38)] hover:-translate-y-px
+                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#104080] focus:ring-offset-2"
+            >
+              <HiMicrophone className="w-4 h-4" aria-hidden="true" />
+              Voice Bot
+            </a>
           </div>
 
           {/* Error */}
