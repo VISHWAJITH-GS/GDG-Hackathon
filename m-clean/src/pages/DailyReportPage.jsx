@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------
 
 import { useState, useEffect } from 'react'
+import { HiCheckCircle } from 'react-icons/hi2'
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
 import { db } from '../firebase'
 import Button from '../components/Button'
@@ -378,7 +379,9 @@ export default function DailyReportPage() {
                                 </div>
                             ) : (
                                 <div className="text-center py-8">
-                                    <span className="text-4xl mb-2 block">✓</span>
+                                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-green-100 flex items-center justify-center">
+                                        <HiCheckCircle className="w-10 h-10 text-green-600" />
+                                    </div>
                                     <p className="text-sm font-semibold text-[var(--color-text)]">No Critical Hotspots</p>
                                     <p className="text-xs text-[var(--color-muted)] mt-1">
                                         All areas are within acceptable cleanliness thresholds

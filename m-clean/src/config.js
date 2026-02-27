@@ -20,15 +20,15 @@ export const FUNCTIONS_CONFIGURED =
 
 export const MAPS_CONFIGURED =
     !!MAPS_API_KEY &&
-    !MAPS_API_KEY.includes('YOUR_GOOGLE_MAPS') &&
-    MAPS_API_KEY.length > 10
+    MAPS_API_KEY.length > 10 &&
+    !MAPS_API_KEY.startsWith('YOUR_')
 
 // ── Console warnings at module load time ──────────────────────
 if (!FUNCTIONS_CONFIGURED) {
     console.error(
         '[M-Clean] ⚠️  VITE_FUNCTIONS_BASE_URL is missing or invalid.\n' +
         '           Add it to m-clean/.env:\n' +
-        '           VITE_FUNCTIONS_BASE_URL=https://REGION-PROJECT_ID.cloudfunctions.net'
+        '           VITE_FUNCTIONS_BASE_URL=https://asia-south1-madurai-clean-ai-ffce1.cloudfunctions.net'
     )
 }
 
@@ -36,7 +36,7 @@ if (!MAPS_CONFIGURED) {
     console.error(
         '[M-Clean] ⚠️  VITE_GOOGLE_MAPS_API_KEY is missing or invalid.\n' +
         '           Add it to m-clean/.env:\n' +
-        '           VITE_GOOGLE_MAPS_API_KEY=your_key_here'
+        '           VITE_GOOGLE_MAPS_API_KEY=<your_key>'
     )
 }
 

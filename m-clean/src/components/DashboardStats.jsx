@@ -1,6 +1,8 @@
 // src/components/DashboardStats.jsx
 // Display row: Ward Cleanliness Score + 3 mini-stat cards.
 
+import { HiMapPin, HiExclamationTriangle, HiChartBar } from 'react-icons/hi2'
+
 function scoreColor(score) {
     if (score >= 80) return { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-300' }
     if (score >= 50) return { text: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-300' }
@@ -28,7 +30,9 @@ function ScoreCard({ score, rating, loading }) {
 function MiniStat({ label, value, icon, accent = 'var(--color-gov-700)', loading }) {
     return (
         <div className="stat-card flex items-center gap-3" style={{ borderTopColor: accent }}>
-            <span className="text-xl">{icon}</span>
+            <div className="text-2xl" style={{ color: accent }}>
+                {icon}
+            </div>
             <div>
                 {loading
                     ? <div className="w-10 h-6 rounded animate-pulse bg-gray-100 mb-1" />
@@ -60,21 +64,21 @@ export default function DashboardStats({
             <MiniStat
                 label="Active Hotspots"
                 value={hotspotCount}
-                icon="📍"
+                icon={<HiMapPin className="w-6 h-6" />}
                 accent="#D97706"
                 loading={loadingHotspots}
             />
             <MiniStat
                 label="Critical Zones"
                 value={criticalCount}
-                icon="🚨"
+                icon={<HiExclamationTriangle className="w-6 h-6" />}
                 accent="#DC2626"
                 loading={loadingHotspots}
             />
             <MiniStat
                 label="Tomorrow's Risk"
                 value={riskDisplay}
-                icon="🌡️"
+                icon={<HiChartBar className="w-6 h-6" />}
                 accent="#104080"
                 loading={loadingPrediction}
             />

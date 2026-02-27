@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { HiMap, HiMapPin, HiChartBar, HiCheckCircle, HiExclamationTriangle } from 'react-icons/hi2'
 import { db } from '../firebase'
 import { collection, onSnapshot, query, orderBy, where, Timestamp } from 'firebase/firestore'
 import { MAPS_API_KEY, MAPS_CONFIGURED } from '../config'
@@ -326,7 +327,9 @@ export default function HeatmapPage() {
 
                         {!MAPS_CONFIGURED && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-                                <span className="text-5xl">🗺️</span>
+                                <div className="w-20 h-20 rounded-full bg-[var(--color-gov-50)] flex items-center justify-center">
+                                    <HiMap className="w-12 h-12 text-[var(--color-gov-700)]" />
+                                </div>
                                 <p className="text-base font-bold text-[var(--color-gov-800)]">
                                     Google Maps Not Configured
                                 </p>
@@ -341,7 +344,9 @@ export default function HeatmapPage() {
                                 className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none"
                                 style={{ background: 'rgba(255,255,255,0.9)' }}
                             >
-                                <span className="text-4xl">📍</span>
+                                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                                    <HiMapPin className="w-8 h-8 text-gray-400" />
+                                </div>
                                 <p className="text-sm font-semibold text-[var(--color-muted)]">
                                     No reports match current filters
                                 </p>
@@ -405,19 +410,19 @@ export default function HeatmapPage() {
             {/* Bottom Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <SummaryCard
-                    icon="📊"
+                    icon={<HiChartBar className="w-6 h-6" />}
                     label="Total Reports"
                     value={reports.length}
                     color="var(--color-gov-700)"
                 />
                 <SummaryCard
-                    icon="✓"
+                    icon={<HiCheckCircle className="w-6 h-6" />}
                     label="Clearance Rate"
                     value={reports.length > 0 ? `${Math.round((clearedComplaints / reports.length) * 100)}%` : '0%'}
                     color="#16a34a"
                 />
                 <SummaryCard
-                    icon="⚠"
+                    icon={<HiExclamationTriangle className="w-6 h-6" />}
                     label="Critical Zones"
                     value={hotspotClusters}
                     color="#dc2626"

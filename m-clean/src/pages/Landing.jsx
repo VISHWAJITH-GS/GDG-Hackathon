@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../firebase'
 import Button from '../components/Button'
+import { HiCpuChip, HiMap, HiChartBar, HiXCircle, HiCheckCircle, HiTrophy } from 'react-icons/hi'
 
 function StatPanel({ label, value, loading }) {
     return (
@@ -42,7 +43,9 @@ function ProcessStep({ number, title, description }) {
 function TransparencyCard({ icon, title, description, linkTo }) {
     const content = (
         <>
-            <div className="text-4xl mb-3">{icon}</div>
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[var(--color-gov-50)] flex items-center justify-center text-[var(--color-gov-700)]">
+                {icon}
+            </div>
             <h3 className="font-bold text-base text-[var(--color-text)] mb-2">{title}</h3>
             <p className="text-sm text-[var(--color-text-soft)] leading-relaxed">{description}</p>
         </>
@@ -171,7 +174,9 @@ export default function Landing() {
                             </div>
                             <div className="aspect-video bg-gray-100 flex items-center justify-center">
                                 <div className="text-center p-6">
-                                    <p className="text-6xl mb-3">🚫</p>
+                                    <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-red-100 flex items-center justify-center">
+                                        <HiXCircle className="w-12 h-12 text-red-600" />
+                                    </div>
                                     <p className="text-sm font-semibold text-gray-600">Waste accumulation zones</p>
                                     <p className="text-xs text-gray-500 mt-1">Before AI-driven cleanup</p>
                                 </div>
@@ -186,7 +191,9 @@ export default function Landing() {
                             </div>
                             <div className="aspect-video bg-gray-100 flex items-center justify-center">
                                 <div className="text-center p-6">
-                                    <p className="text-6xl mb-3">✓</p>
+                                    <div className="w-20 h-20 mx-auto mb-3 rounded-full bg-green-100 flex items-center justify-center">
+                                        <HiCheckCircle className="w-12 h-12 text-green-600" />
+                                    </div>
                                     <p className="text-sm font-semibold text-gray-600">Clean public spaces</p>
                                     <p className="text-xs text-gray-500 mt-1">After M-Clean intervention</p>
                                 </div>
@@ -251,24 +258,30 @@ export default function Landing() {
                         </p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6">
+                    <div className="grid md:grid-cols-4 gap-6">
                         <TransparencyCard
-                            icon="🤖"
+                            icon={<HiCpuChip className="w-8 h-8" />}
                             title="AI-Based Decision Support"
                             description="Machine learning algorithms analyze waste patterns and provide data-driven recommendations for resource allocation and preventive action."
                             linkTo="/dashboard"
                         />
                         <TransparencyCard
-                            icon="🗺️"
+                            icon={<HiMap className="w-8 h-8" />}
                             title="Real-Time Heatmap Monitoring"
                             description="Interactive geographic visualization shows waste hotspots across Madurai. Officers can track trends and prioritize critical zones instantly."
                             linkTo="/heatmap"
                         />
                         <TransparencyCard
-                            icon="📊"
+                            icon={<HiChartBar className="w-8 h-8" />}
                             title="Daily Sanitation Reports"
                             description="Comprehensive daily reports with cleanliness scores, active complaints, and crew performance. Full transparency for citizens and stakeholders."
                             linkTo="/reports"
+                        />
+                        <TransparencyCard
+                            icon={<HiTrophy className="w-8 h-8" />}
+                            title="Civic Participation Leaderboard"
+                            description="Recognizing active citizens who contribute to a cleaner Madurai. Earn tokens for each complaint and see your civic impact."
+                            linkTo="/leaderboard"
                         />
                     </div>
                 </div>
@@ -285,7 +298,17 @@ export default function Landing() {
                         making Madurai a cleaner, healthier city for all.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">
+                        <Link to="/complaint">
+                            <Button variant="primary" size="lg" className="w-full sm:w-auto min-w-[200px] bg-white text-[var(--color-gov-700)] hover:bg-blue-50">
+                                File Complaint
+                            </Button>
+                        </Link>
+                        <Link to="/leaderboard">
+                            <Button variant="secondary" size="lg" className="w-full sm:w-auto min-w-[200px]">
+                                View Leaderboard
+                            </Button>
+                        </Link>
                         <Link to="/heatmap">
                             <Button variant="secondary" size="lg" className="w-full sm:w-auto min-w-[200px]">
                                 View Live Heatmap

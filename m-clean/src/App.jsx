@@ -11,26 +11,34 @@
 // ---------------------------------------------------------------
 
 import { BrowserRouter, Routes, Route, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { HiExclamationTriangle } from 'react-icons/hi2'
 import Landing from './pages/Landing'
 import LoginPage from './pages/LoginPage'
+import FileComplaintPage from './pages/FileComplaintPage'
 import HeatmapPage from './pages/HeatmapPage'
 import DailyReportPage from './pages/DailyReportPage'
 import OfficerDashboard from './pages/OfficerDashboard'
+import LeaderboardPage from './pages/LeaderboardPage'
+import UserProfilePage from './pages/UserProfilePage'
 import ProtectedRoute from './components/ProtectedRoute'
 import { FUNCTIONS_CONFIGURED, MAPS_CONFIGURED } from './config'
 
 // ── Navigation items (public pages) ──────────────────────────────────────────
 const PUBLIC_NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
+  { to: '/complaint', label: 'File Complaint', end: false },
   { to: '/heatmap', label: 'Live Heatmap', end: false },
   { to: '/reports', label: 'Daily Reports', end: false },
+  { to: '/leaderboard', label: 'Leaderboard', end: false },
 ]
 
 // ── Navigation items (authenticated pages) ──────────────────────────────────────────
 const AUTH_NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
+  { to: '/complaint', label: 'File Complaint', end: false },
   { to: '/heatmap', label: 'Live Heatmap', end: false },
   { to: '/reports', label: 'Daily Reports', end: false },
+  { to: '/leaderboard', label: 'Leaderboard', end: false },
   { to: '/dashboard', label: 'Officer Dashboard', end: false },
 ]
 
@@ -67,7 +75,10 @@ function EnvBanner() {
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-        <span className="font-bold flex-shrink-0">⚠️ Configuration</span>
+        <span className="font-bold flex-shrink-0 flex items-center gap-1.5">
+          <HiExclamationTriangle className="w-4 h-4" />
+          Configuration
+        </span>
         <span>
           Missing env var{missing.length > 1 ? 's' : ''}:{' '}
           {missing.map((k) => (
@@ -87,13 +98,19 @@ function Breadcrumb() {
     ? 'Home'
     : pathname === '/login'
       ? 'Officer Login'
-      : pathname === '/heatmap'
-        ? 'Live Heatmap'
-        : pathname === '/reports'
-          ? 'Daily Reports'
-          : pathname === '/dashboard'
-            ? 'Officer Dashboard'
-            : 'Page'
+      : pathname === '/complaint'
+        ? 'File Complaint'
+        : pathname === '/heatmap'
+          ? 'Live Heatmap'
+          : pathname === '/reports'
+            ? 'Daily Reports'
+            : pathname === '/leaderboard'
+              ? 'Leaderboard'
+              : pathname === '/profile'
+                ? 'User Profile'
+                : pathname === '/dashboard'
+                  ? 'Officer Dashboard'
+                  : 'Page'
 
   return (
     <div
@@ -113,6 +130,7 @@ function Breadcrumb() {
 function GovLayout({ children }) {
   const navigate = useNavigate()
   const isAuthenticated = sessionStorage.getItem('isAuthenticated') === 'true'
+  const hasUserSession = sessionStorage.getItem('userPhone') || sessionStorage.getItem('userEmail')
   
   const handleLogout = () => {
     sessionStorage.clear()
@@ -150,6 +168,22 @@ function GovLayout({ children }) {
                 >
                   Logout
                 </button>
+              </>
+            ) : hasUserSession ? (
+              <>
+                <button 
+                  onClick={() => navigate('/profile')}
+                  className="opacity-90 hover:opacity-100 font-semibold transition-opacity flex items-center gap-1"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  My Profile
+                </button>
+                <span className="opacity-30">|</span>
+                <span className="opacity-70">தமிழ்</span>
+                <span className="opacity-30">|</span>
+                <span className="opacity-70">English</span>
               </>
             ) : (
               <>
@@ -321,12 +355,24 @@ export default function App() {
           element={<LoginPage />}
         />
         <Route
+          path="/complaint"
+          element={<GovLayout><FileComplaintPage /></GovLayout>}
+        />
+        <Route
           path="/heatmap"
           element={<GovLayout><HeatmapPage /></GovLayout>}
         />
         <Route
           path="/reports"
           element={<GovLayout><DailyReportPage /></GovLayout>}
+        />
+        <Route
+          path="/leaderboard"
+          element={<GovLayout><LeaderboardPage /></GovLayout>}
+        />
+        <Route
+          path="/profile"
+          element={<GovLayout><UserProfilePage /></GovLayout>}
         />
         <Route
           path="/dashboard"
