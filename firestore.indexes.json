@@ -1,0 +1,33 @@
+{
+    "indexes": [
+        {
+            "collectionGroup": "reports",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "metadata.processed_at",
+                    "order": "DESCENDING"
+                },
+                {
+                    "fieldPath": "__name__",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "reports",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "metadata.processed_at",
+                    "order": "DESCENDING"
+                }
+            ]
+        }
+    ],
+    "fieldOverrides": []
+}

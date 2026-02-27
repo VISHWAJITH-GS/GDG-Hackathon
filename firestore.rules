@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── reports collection ──────────────────────────────────────────
+    // Citizens can create a report (write). Only authenticated users.
+    // Officers can read all reports (read requires auth).
+    // AI backend (Cloud Functions via ADC) has full access via IAM.
+    match /reports/{reportId} {
+      allow create: if request.auth != null;
+      allow read:   if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false; // Deletion only via Admin SDK
+    }
+
+    // ── daily_summary collection ────────────────────────────────────
+    // Written by Cloud Functions only. Officers can read.
+    match /daily_summary/{docId} {
+      allow read:   if request.auth != null;
+      allow write:  if false; // Written by Cloud Functions (Admin SDK)
+    }
+
+    // ── predictions collection ──────────────────────────────────────
+    match /predictions/{docId} {
+      allow read:   if request.auth != null;
+      allow write:  if false;
+    }
+  }
+}
