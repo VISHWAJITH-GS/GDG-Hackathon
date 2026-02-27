@@ -48,10 +48,11 @@ export default defineConfig({
         navigateFallbackAllowlist: [/^(?!\/__)/],
       },
 
-      // Dev options — DISABLED in dev: the SW intercepts requests and breaks
-      // Firebase Google Auth popups (Cross-Origin-Opener-Policy conflict).
+      // Dev options — keep SW disabled, but serve the manifest so the
+      // browser doesn't log a manifest syntax error in the console.
       devOptions: {
         enabled: false,
+        type: 'module',
       },
     }),
   ],

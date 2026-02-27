@@ -1,0 +1,196 @@
+You are a Principal Backend Architect building a production-ready AI-powered civic intelligence system for Madurai Municipal Corporation.
+
+We are participating in a Google GDG Hackathon and MUST strictly use:
+
+- Backend: Firebase (Cloud Functions, Firestore, Storage)
+- AI: Gemini 1.5 Pro / Flash via Vertex AI
+- Mapping: Google Maps Platform
+- Image Generation: Imagen
+- No OpenAI. Only Google stack.
+
+Your task is to generate a complete backend architecture and implementation in Node.js (Cloud Functions).
+
+=========================
+SYSTEM REQUIREMENTS
+=========================
+
+This system must satisfy the following 6 checklists:
+
+--------------------------------------------------
+1) GENAI CORE REQUIREMENTS
+--------------------------------------------------
+
+• Multimodal support:
+  - Image analysis (trash photos)
+  - Audio complaints (Madurai Tamil dialect)
+  - Video support optional (frame extraction)
+
+• Complex prompt engineering:
+  - AI must act as "Madurai Sanitation Inspector"
+  - Estimate waste volume in cubic meters
+  - Classify waste:
+      - Temple Waste (banana leaves, flower garlands, food)
+      - Tourist Waste (plastic bottles, wrappers)
+      - Mixed
+  - Detect specific items
+  - Generate severity score (1–10)
+  - Generate priority score based on proximity to:
+      - Meenakshi Temple
+      - Vaigai River
+  - Output MUST be structured JSON only
+
+• JSON schema for image analysis:
+
+{
+  "waste_type": "",
+  "estimated_volume_m3": 0,
+  "detected_items": [],
+  "severity_score": 0,
+  "priority_score": 0,
+  "location_zone": "",
+  "recommended_action": "",
+  "confidence": 0.0
+}
+
+--------------------------------------------------
+2) MADURAI CONTEXT REQUIREMENTS
+--------------------------------------------------
+
+• Audio handling:
+  - Accept Tamil speech
+  - Transcribe using Google Speech-to-Text
+  - Translate and categorize complaint
+  - Example: "Inga romba naaruthu" → "Bad Odor/Hygiene Issue"
+
+• Hyper-local intelligence:
+  - Store coordinates of:
+      - Meenakshi Temple
+      - Vaigai River
+  - Calculate distance from complaint location
+  - If within 500 meters:
+      - Flag as "Code Red: Pilgrimage Zone"
+
+• Recognize banana leaves and flower garlands specifically.
+
+--------------------------------------------------
+3) WORKFLOW INTEGRATION
+--------------------------------------------------
+
+Implement "Proof of Work" verification:
+
+Endpoint:
+POST /verify-cleanup
+
+Inputs:
+- beforeImage
+- afterImage
+
+AI must:
+1. Confirm same location
+2. Confirm trash removed
+3. Detect hidden/cropped trash
+4. Return fraud probability
+
+JSON output:
+
+{
+  "same_location": true,
+  "trash_removed": true,
+  "fraud_probability": 0.0,
+  "verification_status": "Approved"
+}
+
+--------------------------------------------------
+4) AGENTIC WORKFLOW (SECRET WEAPON)
+--------------------------------------------------
+
+If AI detects:
+- Dead animal
+- Biomedical waste
+- Hazardous waste
+
+System must:
+1. Classify as "Biological Hazard"
+2. Query Firestore for nearest specialized disposal unit
+3. Generate formal Tamil SMS/email to zonal officer
+4. Return confirmation to user
+
+--------------------------------------------------
+5) PREDICTIVE MODULE
+--------------------------------------------------
+
+Endpoint:
+GET /predict-risk?ward=12
+
+Using past Firestore complaint data:
+- Analyze trends
+- Detect festival patterns
+- Return risk score and explanation
+
+JSON:
+
+{
+  "ward": 12,
+  "risk_score": 0.82,
+  "reason": ""
+}
+
+--------------------------------------------------
+6) GENERATIVE VISUALIZATION
+--------------------------------------------------
+
+Endpoint:
+POST /restore-heritage
+
+Input:
+- Dirty wall image
+
+Use Imagen to generate restored clean version.
+Return base64 restored image.
+
+--------------------------------------------------
+TECHNICAL REQUIREMENTS
+--------------------------------------------------
+
+Generate:
+
+1. Folder structure for Firebase Functions project
+2. index.js with:
+   - /analyze-image
+   - /analyze-audio
+   - /verify-cleanup
+   - /predict-risk
+   - /restore-heritage
+3. Vertex AI integration
+4. Firestore integration
+5. Google Maps distance calculation utility
+6. Proper async/await handling
+7. Environment variable setup
+8. Error handling middleware
+9. JSON schema validation
+10. Modular architecture (services folder)
+
+--------------------------------------------------
+IMPORTANT CONSTRAINTS
+--------------------------------------------------
+
+• Use Gemini 1.5 Pro for image comparison
+• Use Gemini 1.5 Flash for lightweight classification
+• Always force structured JSON output
+• No Markdown in AI responses
+• Production-ready coding style
+• Use best practices
+
+--------------------------------------------------
+DELIVERABLE FORMAT
+--------------------------------------------------
+
+Generate:
+
+1. Complete folder structure
+2. Full Cloud Functions code
+3. Service layer abstraction
+4. Firestore schema design
+5. Deployment instructions
+
+Act as a senior Google Cloud architect and build this cleanly.

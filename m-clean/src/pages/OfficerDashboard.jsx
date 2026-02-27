@@ -94,39 +94,43 @@ export default function OfficerDashboard() {
     // ── Fetch helpers ────────────────────────────────────────────────
 
     const fetchHotspots = useCallback(async () => {
-        setLoadHotspots(true); setErrHotspots(null)
-        try {
-            const data = await callFn('detectHotspots', { days: 7 })
-            setHotspots(data)
-            return data
-        } catch (e) {
-            setErrHotspots(e.message)
-            return null
-        } finally {
-            setLoadHotspots(false)
-        }
+        // detectHotspots endpoint not yet deployed — return empty gracefully
+        setHotspots({ top_hotspots: [], repeated_dumping_zones: [], pattern_explanation: '', peak_waste_time: '' })
+        return null
     }, [])
 
-    const fetchScore = useCallback(async (total, highSeverity) => {
-        setLoadScore(true); setErrScore(null)
-        try {
-            const data = await callFn('calculateWardScore', {
-                total_reports: total,
-                high_severity_reports: highSeverity,
-            })
-            setScore(data)
-        } catch (e) {
-            setErrScore(e.message)
-        } finally {
-            setLoadScore(false)
-        }
+    const fetchScore = useCallback(async () => {
+        // calculateWardScore endpoint not yet deployed — skip silently
+        setScore(null)
     }, [])
 
-    const fetchPrediction = useCallback(async () => {
+    const fetchPrediction = useCallback(async (ward = 12) => {
         setLoadPrediction(true); setErrPrediction(null)
         try {
-            const data = await callFn('predictGarbage', { days: 7 })
-            setPrediction(data)
+            if (!FUNCTIONS_CONFIGURED) throw new Error('VITE_FUNCTIONS_BASE_URL not configured.')
+            const res = await fetch(`${FUNCTIONS_BASE}/predict-risk?ward=${ward}`)
+            const data = await res.json()
+            if (!data.success) throw new Error(data.error || 'predict-risk failed')
+
+            // Map backend response shape to what PredictionPanel expects
+            const riskScore = data.risk_score ?? 0
+            const riskLevel = data.risk_level ??
+                (riskScore >= 0.7 ? 'critical' : riskScore >= 0.4 ? 'high' : riskScore >= 0.2 ? 'medium' : 'low')
+            setPrediction({
+                risk_probability: riskScore,
+                risk_level: riskLevel,
+                trend: data.trend ?? '',
+                reasoning: data.reason ?? data.reasoning ?? '',
+                festival_alert: data.festival_alert ?? null,
+                risk_zones: [{
+                    zone_name: `Ward ${data.ward ?? ward}`,
+                    risk_level: riskLevel,
+                    predicted_waste_type: data.dominant_waste_type ?? 'Mixed Waste',
+                    contributing_factors: data.key_factors ?? [
+                        data.reason ?? 'Based on complaint history',
+                    ],
+                }],
+            })
         } catch (e) {
             setErrPrediction(e.message)
         } finally {
@@ -134,41 +138,19 @@ export default function OfficerDashboard() {
         }
     }, [])
 
-    const fetchWorkforce = useCallback(async (zones) => {
-        if (!zones || zones.length === 0) { setWorkforce(null); return }
-        setLoadWorkforce(true); setErrWorkforce(null)
-        try {
-            const data = await callFn('allocateWorkforce', {
-                hotspots: zones,
-                num_workers: NUM_WORKERS,
-                num_trucks: NUM_TRUCKS,
-            })
-            setWorkforce(data)
-        } catch (e) {
-            setErrWorkforce(e.message)
-        } finally {
-            setLoadWorkforce(false)
-        }
+    const fetchWorkforce = useCallback(async () => {
+        // allocateWorkforce endpoint not yet deployed — skip silently
+        setWorkforce(null)
     }, [])
 
     // ── Full refresh (all sections) ──────────────────────────────────
     const refreshAll = useCallback(async () => {
-        const [hotspotsData] = await Promise.all([
+        await Promise.all([
             fetchHotspots(),
             fetchPrediction(),
+            fetchScore(),
+            fetchWorkforce(),
         ])
-
-        if (hotspotsData) {
-            const spots = hotspotsData.top_hotspots ?? []
-            const total = spots.reduce((s, h) => s + (h.report_count ?? 1), 0)
-            const highSev = spots.filter((h) => (h.avg_severity ?? h.severity_score ?? 0) >= 7).length
-            await Promise.all([
-                fetchScore(total, highSev),
-                fetchWorkforce(spots),
-            ])
-        } else {
-            fetchScore(0, 0)
-        }
     }, [fetchHotspots, fetchPrediction, fetchScore, fetchWorkforce])
 
     // ── Mount ────────────────────────────────────────────────────────

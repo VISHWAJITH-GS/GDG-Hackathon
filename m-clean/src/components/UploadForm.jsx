@@ -29,34 +29,43 @@ function formatBytes(bytes) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// Non-blocking: trigger analyzeWaste after upload.
+// Non-blocking: send image to backend /analyze-image for AI analysis.
 // Fires and forgets — upload success does NOT depend on this call.
-async function triggerAnalyzeWaste(reportId, imageUrl, coords) {
+async function triggerAnalyzeWaste(reportId, imageFile, coords) {
     if (!FUNCTIONS_CONFIGURED) {
-        console.info('[UploadForm] analyzeWaste skipped — VITE_FUNCTIONS_BASE_URL not configured.')
+        console.info('[UploadForm] analyze-image skipped — VITE_FUNCTIONS_BASE_URL not configured.')
         return
     }
     try {
-        const res = await fetch(`${FUNCTIONS_BASE}/analyzeWaste`, {
+        // Convert File to base64 (strip the data:...;base64, prefix)
+        const imageBase64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result.split(',')[1])
+            reader.onerror = reject
+            reader.readAsDataURL(imageFile)
+        })
+
+        const res = await fetch(`${FUNCTIONS_BASE}/analyze-image`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                report_id: reportId,
-                image_url: imageUrl,
-                metadata: {
-                    latitude: coords.latitude,
-                    longitude: coords.longitude,
-                },
+                reportId,
+                imageBase64,
+                latitude: coords.latitude,
+                longitude: coords.longitude,
             }),
         })
         if (!res.ok) {
             const body = await res.json().catch(() => ({}))
-            console.warn('[UploadForm] analyzeWaste returned non-OK:', res.status, body)
+            console.warn('[UploadForm] analyze-image returned non-OK:', res.status, body)
         } else {
-            console.info('[UploadForm] analyzeWaste triggered for report:', reportId)
+            const result = await res.json()
+            console.info('[UploadForm] AI analysis complete for report:', reportId,
+                '| waste_type:', result.analysis?.waste_type,
+                '| severity:', result.analysis?.severity_score)
         }
     } catch (err) {
-        console.warn('[UploadForm] analyzeWaste call failed (non-critical):', err.message)
+        console.warn('[UploadForm] analyze-image call failed (non-critical):', err.message)
     }
 }
 
@@ -242,7 +251,7 @@ export default function UploadForm({ onSuccess, createdBy = null }) {
 
             // Step 3 — Trigger AI analysis (non-blocking)
             setUploadStatus('triggering')
-            await triggerAnalyzeWaste(docRef.id, downloadURL, coords)
+            await triggerAnalyzeWaste(docRef.id, imageFile, coords)
 
             setUploadStatus('done')
             onSuccess?.({ docId: docRef.id, imageUrl: downloadURL, coords })
