@@ -10,6 +10,8 @@ import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
 import { useAuth } from '../context/AuthContext'
+import Button from '../components/Button'
+import { HiExclamationTriangle, HiUserCircle } from 'react-icons/hi2'
 
 // ── Ensure Firestore citizen doc exists ──────────────────────
 async function ensureCitizenDoc(firebaseUser) {
@@ -134,7 +136,7 @@ export default function RegisterPage() {
           {error && (
             <div role="alert"
               className="mb-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
-              <span className="mt-0.5 flex-shrink-0">⚠️</span>
+              <HiExclamationTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
@@ -205,26 +207,21 @@ export default function RegisterPage() {
             </div>
 
             {/* Citizen notice */}
-            <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-xs text-[#104080]">
-              🧑 Citizens can file complaints and track their status in real-time.
+            <div className="rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-xs text-[#104080] flex items-center gap-2">
+              <HiUserCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+              Citizens can file complaints and track their status in real-time.
             </div>
 
             {/* Submit */}
-            <button type="submit" disabled={loading}
-              className="w-full rounded-lg py-2.5 text-sm font-semibold text-white
-                         bg-[#104080] hover:bg-[#0d3060] disabled:opacity-60
-                         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#104080]
-                         transition-colors duration-150 flex items-center justify-center gap-2">
-              {loading ? (
-                <>
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Creating account…
-                </>
-              ) : 'Register'}
-            </button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              loading={loading}
+              className="w-full"
+            >
+              Register
+            </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">

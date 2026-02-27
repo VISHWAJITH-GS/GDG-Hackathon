@@ -4,6 +4,8 @@
 //   prediction — full predictGarbage response object
 //   loading, error, onRetry
 
+import { HiInboxArrowDown } from 'react-icons/hi2'
+
 function riskBadge(level) {
     const map = {
         critical: 'bg-red-100 text-red-800 border border-red-200',
@@ -93,7 +95,7 @@ export default function PredictionPanel({ prediction = null, loading = false, er
                 {/* Empty / no data */}
                 {!loading && !error && !prediction && (
                     <div className="flex flex-col items-center py-8 gap-2 text-center">
-                        <span className="text-3xl">📭</span>
+                        <HiInboxArrowDown className="w-10 h-10 text-[var(--color-muted)]" aria-hidden="true" />
                         <p className="text-sm font-semibold" style={{ color: 'var(--color-muted)' }}>No prediction data</p>
                     </div>
                 )}

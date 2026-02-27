@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
+import { HiLockClosed, HiExclamationTriangle } from 'react-icons/hi2'
 
 function ShieldIcon() {
   return (
@@ -101,8 +102,9 @@ export default function AdminLoginPage() {
               M-Clean — Authorised Personnel Only
             </p>
             {/* Restricted access notice */}
-            <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 text-center">
-              🔒 This portal is restricted to M-Clean administrators
+            <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 text-center flex items-center justify-center gap-2">
+              <HiLockClosed className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+              This portal is restricted to M-Clean administrators
             </div>
           </div>
 
@@ -110,7 +112,7 @@ export default function AdminLoginPage() {
           {error && (
             <div role="alert"
               className="mb-5 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-start gap-2">
-              <span className="mt-0.5 flex-shrink-0">⚠️</span>
+              <HiExclamationTriangle className="mt-0.5 flex-shrink-0 w-4 h-4" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}

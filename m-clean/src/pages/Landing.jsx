@@ -119,24 +119,47 @@ export default function Landing() {
 
     return (
         <div className="bg-white">
-            {/* 1️⃣ Government Header Section */}
+            {/* 1 — Government Header Section */}
             <section className="bg-white border-b-4 border-[var(--color-gov-700)] py-12">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
                     <TNEmblemLarge />
-                    <h1 className="text-3xl sm:text-4xl font-bold text-[var(--color-gov-900)] mt-6 mb-3">
-                        Madurai Municipal Corporation
+                    <p className="text-xs font-semibold text-[var(--color-gov-600)] uppercase tracking-widest mt-6 mb-1">
+                        Government of Tamil Nadu
+                    </p>
+                    <h1 className="text-3xl sm:text-4xl font-bold text-[var(--color-gov-900)] mb-1">
+                        Madurai City Municipal Corporation
                     </h1>
+                    <p className="text-xs text-[var(--color-muted)] mb-4">
+                        Arignar Anna Maligai, Thallakulam, Madurai &mdash; 625 002. &nbsp;·&nbsp;
+                        <a href="tel:+914522540333" className="hover:underline text-[var(--color-gov-700)]">+91 452 2540333</a>
+                    </p>
                     <p className="text-lg sm:text-xl font-semibold text-[var(--color-gov-700)] mb-2">
                         M-Clean: AI-Enabled Civic Sanitation Management System
                     </p>
-                    <p className="text-sm text-[var(--color-muted)] max-w-2xl mx-auto leading-relaxed">
-                        A Smart Cities Mission initiative leveraging artificial intelligence for 
-                        efficient waste management and citizen-driven cleanliness monitoring.
+                    <p className="text-sm text-[var(--color-muted)] max-w-2xl mx-auto leading-relaxed mb-6">
+                        Madurai &mdash; the &ldquo;Athens of the East&rdquo; &mdash; is the second-largest Municipal
+                        Corporation in Tamil Nadu. M-Clean leverages artificial intelligence to deliver
+                        transparent, citizen-driven sanitation management across all 100 wards.
                     </p>
+                    {/* Corporation Quick Facts */}
+                    <div className="inline-flex flex-wrap justify-center gap-x-8 gap-y-2 border border-[var(--color-border)] rounded px-6 py-3 bg-[var(--color-surface)]">
+                        {[
+                            { label: 'Wards', value: '100' },
+                            { label: 'Area', value: '147.99 Sq.Km' },
+                            { label: 'Zones', value: '5 Zones' },
+                            { label: 'Established', value: '1ˢᵗ Nov 1866' },
+                            { label: 'Population', value: '14.7 Lakh+' },
+                        ].map(({ label, value }) => (
+                            <div key={label} className="text-center">
+                                <p className="text-base font-bold text-[var(--color-gov-800)]">{value}</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)]">{label}</p>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 
-            {/* 2️⃣ Current City Status Overview */}
+            {/* 2 — Current City Status Overview */}
             <section className="bg-[var(--color-surface)] py-12">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="text-center mb-8">
@@ -155,7 +178,7 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* 3️⃣ Before vs After Impact Section */}
+            {/* 3 — Before vs After Impact Section */}
             <section className="bg-white py-12">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="text-center mb-8">
@@ -203,7 +226,7 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* 4️⃣ How the System Works */}
+            {/* 4 — How the System Works */}
             <section className="bg-[var(--color-surface)] py-12">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6">
                     <div className="text-center mb-10">
@@ -246,7 +269,7 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* 5️⃣ Public Transparency Section */}
+            {/* 5 — Public Transparency Section */}
             <section className="bg-white py-12">
                 <div className="max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="text-center mb-10">
@@ -287,15 +310,20 @@ export default function Landing() {
                 </div>
             </section>
 
-            {/* 6️⃣ Call to Action */}
+            {/* 6 — Call to Action */}
             <section className="bg-[var(--color-gov-700)] text-white py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
                     <h2 className="text-2xl sm:text-3xl font-bold mb-3">
                         Join the Clean Madurai Movement
                     </h2>
-                    <p className="text-blue-100 mb-8 max-w-2xl mx-auto">
-                        Be a part of the solution. Report issues, track progress, and contribute to 
-                        making Madurai a cleaner, healthier city for all.
+                    <p className="text-blue-100 mb-2 max-w-2xl mx-auto">
+                        Be a part of the solution. Report issues, track progress, and contribute to
+                        making Madurai a cleaner, healthier city for all 14.7 lakh citizens.
+                    </p>
+                    <p className="text-xs text-blue-300 mb-8">
+                        Official public grievance portal of the Madurai City Municipal Corporation &mdash;
+                        <a href="https://maduraipublic.grievancecell.org/" target="_blank" rel="noopener noreferrer"
+                            className="underline hover:text-white ml-1">maduraipublic.grievancecell.org</a>
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center flex-wrap">

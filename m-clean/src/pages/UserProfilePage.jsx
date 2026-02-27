@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getUserData, createUserIdentifier } from '../utils/userManager'
+import { HiTrophy, HiStar, HiShieldCheck, HiSparkles } from 'react-icons/hi2'
 
 function StatCard({ label, value, icon, loading }) {
     return (
@@ -119,7 +120,7 @@ function RecognitionBadge({ tokens }) {
         level: 'New Contributor',
         color: '#64748b',
         bgColor: '#f1f5f9',
-        icon: '🌱'
+        icon: <HiSparkles className="w-10 h-10" />
     }
 
     if (tokens >= 16) {
@@ -127,27 +128,29 @@ function RecognitionBadge({ tokens }) {
             level: 'Gold Contributor',
             color: '#92400e',
             bgColor: '#fef3c7',
-            icon: '🏆'
+            icon: <HiTrophy className="w-10 h-10" />
         }
     } else if (tokens >= 6) {
         badge = {
             level: 'Silver Contributor',
             color: '#374151',
             bgColor: '#e5e7eb',
-            icon: '⭐'
+            icon: <HiStar className="w-10 h-10" />
         }
     } else if (tokens >= 1) {
         badge = {
             level: 'Bronze Contributor',
             color: '#9a3412',
             bgColor: '#fed7aa',
-            icon: '🥉'
+            icon: <HiShieldCheck className="w-10 h-10" />
         }
     }
 
     return (
         <div className="gov-card p-6 text-center">
-            <div className="text-5xl mb-3">{badge.icon}</div>
+            <div className="flex items-center justify-center mb-3" style={{ color: badge.color }}>
+                {badge.icon}
+            </div>
             <div 
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold mb-2"
                 style={{ backgroundColor: badge.bgColor, color: badge.color }}

@@ -20,6 +20,8 @@ import RegisterPage from './pages/RegisterPage'
 import CitizenDashboard from './pages/CitizenDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import AdminLoginPage from './pages/AdminLoginPage'
+import HeatmapPage from './pages/HeatmapPage'
+import DailyReportPage from './pages/DailyReportPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
 import { FUNCTIONS_CONFIGURED, MAPS_CONFIGURED } from './config'
@@ -28,7 +30,9 @@ import { FUNCTIONS_CONFIGURED, MAPS_CONFIGURED } from './config'
 const NAV_ITEMS = [
   { to: '/', label: 'Home', end: true },
   { to: '/report', label: 'File a Complaint', end: true },
-  { to: '/dashboard', label: 'Officer Dashboard', end: false },
+  { to: '/map', label: 'Monitoring Map', end: true },
+  { to: '/daily-report', label: 'Daily Report', end: true },
+  { to: '/login', label: 'Login', end: true },
 ]
 
 // ── Emblem SVG (Ashoka-style simplified wheel) ────────────────
@@ -76,7 +80,7 @@ function EnvBanner() {
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-        <span className="font-bold flex-shrink-0">⚠️ Configuration</span>
+        <span className="font-bold flex-shrink-0">Configuration</span>
         <span>
           Missing env var{missing.length > 1 ? 's' : ''}:{' '}
           {missing.map((k) => (
@@ -107,12 +111,14 @@ function GovLayout({ children }) {
       <div className="bg-[var(--color-gov-900)] text-white text-xs py-1.5">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <span className="tracking-wide opacity-80 font-medium">
-            Government of India &nbsp;|&nbsp; Ministry of Urban Development
+            Government of Tamil Nadu &nbsp;|  Urban Local Bodies Department
           </span>
-          <div className="flex items-center gap-4 opacity-70">
-            <span>हिन्दी</span>
-            <span>|</span>
-            <span>English</span>
+          <div className="flex items-center gap-4 opacity-80">
+            <a href="tel:+917871661787" className="hover:text-white transition">
+              Helpline: +91 78716 61787
+            </a>
+            <span aria-hidden="true">|</span>
+            <a href="https://maduraicorporation.co.in" target="_blank" rel="noopener noreferrer" className="hover:text-white transition">maduraicorporation.co.in</a>
           </div>
         </div>
       </div>
@@ -122,45 +128,27 @@ function GovLayout({ children }) {
 
       {/* ── 3. Portal header ── */}
       <header className="bg-white border-b border-[#d1d9e6] shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
           {/* Emblem */}
           <div className="flex-shrink-0">
             <AshokaPillar />
           </div>
 
           {/* Portal title */}
-          <div className="flex-1">
-            <h1 className="text-base sm:text-lg font-bold text-[var(--color-gov-900)] leading-tight tracking-tight">
-              m-clean
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-[var(--color-gov-900)] leading-tight tracking-tight truncate">
+              M-Clean &mdash; Madurai City Municipal Corporation
             </h1>
-            <p className="text-xs text-[var(--color-muted)] leading-tight mt-0.5">
-              Municipal Cleanliness Grievance Redressal Portal
+            <p className="text-xs text-[var(--color-muted)] leading-tight mt-0.5 truncate">
+              Government of Tamil Nadu &mdash; AI-Enabled Civic Sanitation
             </p>
           </div>
 
-          {/* India logo badge */}
-          <div className="hidden sm:flex flex-col items-center text-right">
-            <span
-              className="text-xs font-bold tracking-widest"
-              style={{ color: '#FF9933' }}
-            >
-              भारत
-            </span>
-            <span
-              className="text-xs font-bold tracking-widest"
-              style={{ color: '#138808' }}
-            >
-              INDIA
-            </span>
-          </div>
-        </div>
-
-        {/* ── 4. Navigation tab bar ── */}
-        <nav
-          className="border-t border-[#d1d9e6] bg-[var(--color-gov-800)]"
-          aria-label="Main navigation"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex">
+          {/* ── 4. Navigation — left-aligned in header row ── */}
+          <nav
+            className="hidden md:flex items-center gap-0.5 ml-4"
+            aria-label="Main navigation"
+          >
             {NAV_ITEMS.map(({ to, label, end }) => (
               <NavLink
                 key={to}
@@ -168,19 +156,32 @@ function GovLayout({ children }) {
                 end={end}
                 className={({ isActive }) =>
                   [
-                    'px-5 py-3 text-sm font-semibold tracking-wide transition-colors duration-150',
-                    'border-b-3 focus:outline-none',
+                    'px-3 py-1.5 text-xs font-semibold tracking-wide rounded transition-colors duration-150',
+                    'border-b-2 focus:outline-none whitespace-nowrap',
                     isActive
-                      ? 'border-[var(--color-saffron)] text-white bg-[var(--color-gov-700)]'
-                      : 'border-transparent text-blue-100 hover:text-white hover:bg-[var(--color-gov-700)]/60',
+                      ? 'border-[var(--color-gov-700)] text-[var(--color-gov-900)] bg-[var(--color-gov-50)]'
+                      : 'border-transparent text-[var(--color-gov-600)] hover:text-[var(--color-gov-900)] hover:bg-[var(--color-gov-50)]',
                   ].join(' ')
                 }
               >
                 {label}
               </NavLink>
             ))}
+          </nav>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Official badge */}
+          <div className="hidden sm:flex flex-col items-end gap-0.5 flex-shrink-0">
+            <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#FF9933' }}>
+              தமிழ்நாடு
+            </span>
+            <span className="text-[10px] font-semibold text-[var(--color-muted)] tracking-wide">
+              Est. 1866 &middot; 100 Wards
+            </span>
           </div>
-        </nav>
+        </div>
       </header>
 
       {/* ── 5. Env warning (only when keys are missing) ── */}
@@ -199,10 +200,10 @@ function GovLayout({ children }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="grid sm:grid-cols-3 gap-6 text-sm">
             <div>
-              <p className="font-bold mb-2 text-[var(--color-saffron)]">m-clean Portal</p>
+              <p className="font-bold mb-2 text-[var(--color-saffron)]">M-Clean Portal</p>
               <p className="text-blue-200 text-xs leading-relaxed">
-                A national initiative for citizen-driven municipal cleanliness reporting
-                and grievance redressal under the Swachh Bharat Mission.
+                A Tamil Nadu Government initiative for citizen-driven municipal cleanliness
+                reporting and grievance redressal under the Swachh Bharat Mission.
               </p>
             </div>
             <div>
@@ -226,7 +227,7 @@ function GovLayout({ children }) {
 
           <div className="border-t border-white/10 mt-6 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-blue-300">
             <span>
-              © {new Date().getFullYear()} Ministry of Urban Development, Government of India.
+                          © {new Date().getFullYear()} Urban Local Bodies Department, Government of Tamil Nadu.
               All rights reserved.
             </span>
             <span className="flex gap-3">
@@ -252,7 +253,9 @@ export default function App() {
           {/* ── Public portal routes (GovLayout) ── */}
           <Route path="/"         element={<GovLayout><LandingPage /></GovLayout>} />
           <Route path="/report"   element={<GovLayout><Home /></GovLayout>} />
-          <Route path="/dashboard" element={<GovLayout><OfficerDashboard /></GovLayout>} />
+          <Route path="/map"          element={<GovLayout><HeatmapPage /></GovLayout>} />
+          <Route path="/daily-report"  element={<GovLayout><DailyReportPage /></GovLayout>} />
+          <Route path="/dashboard"     element={<GovLayout><OfficerDashboard /></GovLayout>} />
 
           {/* ── Auth routes (no layout) ── */}
           <Route path="/login"     element={<LoginPage />} />

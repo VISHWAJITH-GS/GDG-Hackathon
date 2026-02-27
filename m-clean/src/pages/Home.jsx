@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import UploadForm from '../components/UploadForm'
 import Toast, { useToast } from '../components/Toast'
+import { HiInformationCircle } from 'react-icons/hi2'
 
 export default function Home() {
     const { toast, showToast, hideToast } = useToast()
@@ -34,7 +35,7 @@ export default function Home() {
                         color: '#6B4E00',
                     }}
                 >
-                    <span className="text-base leading-none mt-0.5 flex-shrink-0">ℹ️</span>
+                    <HiInformationCircle className="w-4 h-4 leading-none mt-0.5 flex-shrink-0" aria-hidden="true" />
                     <span>
                         Fields marked <strong className="text-red-700">*</strong> are mandatory.
                         All complaints are subject to verification by the designated sanitation officer.

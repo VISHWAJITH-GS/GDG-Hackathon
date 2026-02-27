@@ -14,6 +14,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { db } from '../firebase'
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { MAPS_API_KEY, MAPS_CONFIGURED } from '../config'
+import { HiClipboardDocument, HiSquares2X2, HiExclamationTriangle, HiMapPin } from 'react-icons/hi2'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -268,15 +269,15 @@ export default function Heatmap() {
 
             {/* Section header */}
             <div className="section-header flex items-center justify-between">
-                <span>📍 Waste Hotspot Heatmap — Madurai</span>
+                <span className="flex items-center gap-2"><HiMapPin className="w-4 h-4" aria-hidden="true" /> Waste Hotspot Heatmap — Madurai</span>
                 <LiveBadge />
             </div>
 
             {/* Stat row */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-4 bg-[var(--color-surface)]">
-                <StatCard label="Reports Today" value={loading ? '—' : todayReports.length} icon="📋" accent="var(--color-gov-700)" />
-                <StatCard label="Total Reports" value={loading ? '—' : totalReports} icon="🗂️" accent="#104080" />
-                <StatCard label="Critical Zones" value={loading ? '—' : criticalCount} icon="🚨" accent="#DC2626" />
+                <StatCard label="Reports Today" value={loading ? '—' : todayReports.length} icon={<HiClipboardDocument className="w-5 h-5" />} accent="var(--color-gov-700)" />
+                <StatCard label="Total Reports" value={loading ? '—' : totalReports} icon={<HiSquares2X2 className="w-5 h-5" />} accent="#104080" />
+                <StatCard label="Critical Zones" value={loading ? '—' : criticalCount} icon={<HiExclamationTriangle className="w-5 h-5" />} accent="#DC2626" />
             </div>
 
             {/* Map container */}
