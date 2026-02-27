@@ -61,7 +61,7 @@ export default function DashboardStats({
                 label="Active Hotspots"
                 value={hotspotCount}
                 icon="📍"
-                accent="var(--color-saffron)"
+                accent="#D97706"
                 loading={loadingHotspots}
             />
             <MiniStat
@@ -75,7 +75,7 @@ export default function DashboardStats({
                 label="Tomorrow's Risk"
                 value={riskDisplay}
                 icon="🌡️"
-                accent="var(--color-chakra)"
+                accent="#104080"
                 loading={loadingPrediction}
             />
         </div>

@@ -30,7 +30,7 @@ export default function Home() {
                     style={{
                         background: '#FFF8E7',
                         border: '1px solid #FCEAAA',
-                        borderLeft: '4px solid var(--color-saffron)',
+                        borderLeft: '4px solid #D97706',
                         color: '#6B4E00',
                     }}
                 >

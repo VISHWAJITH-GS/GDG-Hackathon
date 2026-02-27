@@ -1,20 +1,22 @@
 // src/components/Button.jsx
 // --------------------------------------------------
 // Reusable button with variant, size & loading state.
-// Variants: "primary" | "ghost" | "danger"
+// Tamil Nadu Government official design style.
+// Variants: "primary" | "secondary" | "ghost" | "danger"
 // Sizes: "sm" | "md" | "lg"
 // --------------------------------------------------
 
 const VARIANTS = {
-    primary: 'bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-green-900/30',
-    ghost: 'bg-white/5 hover:bg-white/10 text-slate-200 ring-1 ring-white/10',
-    danger: 'bg-red-500/20 hover:bg-red-500/30 text-red-300 ring-1 ring-red-500/40',
+    primary: 'bg-[#104080] hover:bg-[#0a3468] text-white border border-[#104080]',
+    secondary: 'bg-white hover:bg-[#f0f6fc] text-[#104080] border border-[#104080]',
+    ghost: 'bg-transparent hover:bg-[#f4f6f9] text-[#104080] border border-[#D1D9E6]',
+    danger: 'bg-[#B22222] hover:bg-[#8B1A1A] text-white border border-[#B22222]',
 }
 
 const SIZES = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-5 py-2.5 text-sm',
-    lg: 'px-7 py-3.5 text-base',
+    lg: 'px-7 py-3 text-base',
 }
 
 export default function Button({
@@ -29,15 +31,14 @@ export default function Button({
         <button
             disabled={loading || props.disabled}
             className={[
-                'inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
-                'transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed',
+                'inline-flex items-center justify-center gap-2 rounded font-semibold',
+                'transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed',
                 VARIANTS[variant] ?? VARIANTS.primary,
                 SIZES[size] ?? SIZES.md,
                 className,
             ].join(' ')}
             {...props}
         >
-            {/* Spinner shown when loading */}
             {loading && (
                 <svg
                     className="animate-spin h-4 w-4"

@@ -1,5 +1,6 @@
 // src/components/Toast.jsx
 // Lightweight, auto-dismissing toast notification.
+// Tamil Nadu Government official style.
 // Usage:
 //   const { toast, showToast } = useToast()
 //   showToast('Upload successful!', 'success')
@@ -8,10 +9,10 @@
 import { useState, useCallback, useEffect } from 'react'
 
 const VARIANTS = {
-    success: { bg: '#f0fdf4', border: '#86efac', text: '#166534', icon: '✅' },
-    error: { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b', icon: '❌' },
-    info: { bg: '#eff6ff', border: '#93c5fd', text: '#1e40af', icon: 'ℹ️' },
-    warning: { bg: '#fffbeb', border: '#fcd34d', text: '#92400e', icon: '⚠️' },
+    success: { bg: '#f0fdf4', border: '#86efac', text: '#166534', icon: '✓' },
+    error: { bg: '#f8d7da', border: '#f5c6cb', text: '#721c1c', icon: '✕' },
+    info: { bg: '#e8f0f8', border: '#93c5fd', text: '#1e3a8a', icon: 'i' },
+    warning: { bg: '#fffbeb', border: '#fcd34d', text: '#78350f', icon: '⚠' },
 }
 
 export function useToast() {

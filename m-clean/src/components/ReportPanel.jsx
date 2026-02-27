@@ -133,7 +133,7 @@ export default function ReportPanel({
                             style={{ borderBottom: '2px solid var(--color-gov-700)' }}
                         >
                             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-gov-700)' }}>
-                                Government of India · Ministry of Urban Development
+                                Government of Tamil Nadu
                             </p>
                             <p className="font-bold text-base mt-1" style={{ color: 'var(--color-gov-900)' }}>
                                 Madurai Municipal Corporation

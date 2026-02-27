@@ -1,16 +1,60 @@
-# React + Vite
+# M-Clean – Civic Sanitation Intelligence
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Government of Tamil Nadu**  
+**Madurai Municipal Corporation**
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+M-Clean is an official government portal for citizen-driven sanitation reporting and grievance redressal. The system enables real-time waste management monitoring, AI-powered hotspot detection, and workforce allocation for the Madurai Municipal Corporation.
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Citizen Complaint Filing**: Geo-tagged image uploads with real-time processing
+- **Officer Dashboard**: Comprehensive analytics and monitoring
+- **AI-Powered Analysis**: Automated waste detection and classification
+- **Hotspot Detection**: Pattern recognition for repeated dumping zones
+- **Workforce Management**: Intelligent allocation of sanitation workers
+- **Predictive Analytics**: Garbage accumulation forecasting
 
-## Expanding the ESLint configuration
+## Technology Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Frontend**: React + Vite
+- **Backend**: Firebase (Firestore, Storage, Cloud Functions)
+- **Styling**: Tailwind CSS v4
+- **AI/ML**: Google Gemini API
+
+## Design System
+
+This application follows the official Tamil Nadu Government design guidelines:
+
+- **Primary Color**: Deep Government Blue (#104080)
+- **Background**: Subtle Grey (#f4f6f9)
+- **Alert Color**: Government Red (#B22222)
+- **Typography**: Clean sans-serif (Inter, Noto Sans)
+- **Design Philosophy**: Formal, flat design with minimal shadows
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Environment Configuration
+
+Create a `.env` file in the project root:
+
+```
+VITE_FUNCTIONS_BASE_URL=https://asia-south1-YOUR_PROJECT_ID.cloudfunctions.net
+VITE_GOOGLE_MAPS_API_KEY=YOUR_MAPS_API_KEY
+```
+
+## License
+
+© 2026 Madurai Municipal Corporation, Government of Tamil Nadu. All rights reserved.
