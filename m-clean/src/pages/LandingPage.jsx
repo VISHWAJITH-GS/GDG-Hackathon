@@ -114,7 +114,7 @@ function useLiveStats() {
 function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden bg-white"
+      className="relative overflow-hidden bg-[var(--color-gov-50)]"
       style={{
         minHeight: '92vh',
         display: 'flex',
@@ -248,7 +248,7 @@ function StatsSection({ stats }) {
   ]
 
   return (
-    <section className="py-16 bg-[#f8fafc]" aria-labelledby="stats-heading">
+    <section className="py-16 bg-[var(--color-surface)]" aria-labelledby="stats-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <SectionLabel>Live Statistics</SectionLabel>
         <h2
@@ -284,7 +284,7 @@ function StatsSection({ stats }) {
 function BeforeAfterSection() {
   return (
     <section
-      className="py-16 bg-white"
+      className="py-16 bg-[var(--color-gov-50)]"
       aria-labelledby="before-after-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -353,7 +353,7 @@ const FEATURES = [
 function FeaturesSection() {
   return (
     <section
-      className="py-16 bg-[#f8fafc]"
+      className="py-16 bg-[var(--color-surface)]"
       aria-labelledby="features-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -410,7 +410,7 @@ const TIMELINE_STEPS = [
 function TimelineSection() {
   return (
     <section
-      className="py-16 bg-white"
+      className="py-16 bg-[var(--color-gov-50)]"
       aria-labelledby="timeline-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -441,7 +441,7 @@ function TimelineSection() {
 function CTABanner() {
   return (
     <section
-      className="py-16 relative overflow-hidden bg-white border-t border-[var(--color-gov-100)]"
+      className="py-16 relative overflow-hidden bg-[var(--color-gov-50)] border-t border-[var(--color-gov-100)]"
       aria-labelledby="cta-heading"
     >
       <div

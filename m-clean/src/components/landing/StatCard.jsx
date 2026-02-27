@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from 'react'
+import { HiArrowTrendingUp, HiArrowRight } from 'react-icons/hi2'
 
 /**
  * Smoothly counts up from 0 to `target` over `duration` ms.
@@ -103,7 +104,10 @@ export default function StatCard({
             color: trendPositive ? '#166534' : '#92400e',
           }}
         >
-          {trendPositive ? '↑' : '→'} {trendLabel}
+          {trendPositive
+            ? <HiArrowTrendingUp className="w-3 h-3" aria-hidden="true" />
+            : <HiArrowRight className="w-3 h-3" aria-hidden="true" />}
+          {trendLabel}
         </span>
       )}
     </div>
