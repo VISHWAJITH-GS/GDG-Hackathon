@@ -1,6 +1,6 @@
-// src/pages/LandingPage.jsx
-// ─────────────────────────────────────────────────────────────
-// M-Clean · AI-Powered Civic Sanitation Portal
+﻿// src/pages/LandingPage.jsx
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// M-Clean ·· AI-Powered Civic Sanitation Portal
 // Public landing page for hackathon demo — Madurai, Tamil Nadu
 //
 // Sections:
@@ -10,7 +10,7 @@
 //   4. AI Impact Features
 //   5. Process Timeline
 //   6. Call-to-Action Banner
-// ─────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -27,49 +27,24 @@ import {
   HiRocketLaunch, HiGlobeAlt, HiServer,
 } from 'react-icons/hi2'
 
-// ── Ashoka Chakra SVG (decorative) ───────────────────────────
-function AshokaDeco({ size = 240, opacity = 0.06 }) {
-  return (
-    <svg
-      width={size} height={size} viewBox="0 0 48 48"
-      fill="none" xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      style={{ opacity }}
-    >
-      <circle cx="24" cy="24" r="22" stroke="white" strokeWidth="1.5" fill="none" />
-      <circle cx="24" cy="24" r="3.5" fill="white" />
-      {Array.from({ length: 24 }).map((_, i) => {
-        const angle = (i * 15 * Math.PI) / 180
-        const x1 = 24 + 5 * Math.cos(angle)
-        const y1 = 24 + 5 * Math.sin(angle)
-        const x2 = 24 + 20 * Math.cos(angle)
-        const y2 = 24 + 20 * Math.sin(angle)
-        return (
-          <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-            stroke="white" strokeWidth="1" strokeLinecap="round" />
-        )
-      })}
-    </svg>
-  )
-}
+// â”€â”€ Ashoka Chakra SVG (decorative) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// ── Inline CTA Button (gov styled, glassy finish) ────────────
+
+// â”€â”€ Inline CTA Button (gov styled, glassy finish) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function HeroButton({ to, children, variant = 'primary' }) {
   const cls = variant === 'primary'
     ? [
-        'text-white border border-white/20 backdrop-blur-sm',
-        '[background:linear-gradient(160deg,rgba(21,87,160,0.88)_0%,rgba(10,52,104,0.94)_100%)]',
-        'shadow-[0_4px_14px_rgba(16,64,128,0.35),inset_0_1px_0_rgba(255,255,255,0.15)]',
-        'hover:[background:linear-gradient(160deg,rgba(26,107,191,0.92)_0%,rgba(16,64,128,1)_100%)]',
-        'hover:shadow-[0_6px_20px_rgba(16,64,128,0.45)] hover:-translate-y-px',
-        'active:[background:linear-gradient(160deg,rgba(234,88,12,0.95)_0%,rgba(194,65,12,0.98)_100%)]!',
-        'active:shadow-[0_2px_8px_rgba(234,88,12,0.4)] active:translate-y-0',
+        'bg-[#104080] text-white border border-[#104080]',
+        'shadow-[0_4px_14px_rgba(16,64,128,0.30)]',
+        'hover:bg-[#0a3468] hover:border-[#0a3468] hover:-translate-y-px',
+        'hover:shadow-[0_6px_20px_rgba(16,64,128,0.45)]',
+        'active:!bg-[#082850] active:translate-y-0',
       ].join(' ')
     : [
-        'bg-white/10 text-white border border-white/30 backdrop-blur-sm',
-        'shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]',
-        'hover:bg-white/20 hover:-translate-y-px',
-        'active:!bg-orange-600/80 active:!border-orange-400/50 active:translate-y-0',
+        'bg-white/10 text-white border border-white/40 backdrop-blur-sm',
+        'hover:bg-white/20 hover:border-white/60 hover:-translate-y-px',
+        'hover:shadow-[0_6px_20px_rgba(255,255,255,0.12)]',
+        'active:!bg-white/30 active:translate-y-0',
       ].join(' ')
 
   return (
@@ -86,7 +61,7 @@ function HeroButton({ to, children, variant = 'primary' }) {
   )
 }
 
-// ── Section label (small caps with saffron bar) ──────────────
+// â”€â”€ Section label (small caps with saffron bar) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SectionLabel({ children }) {
   return (
     <div className="flex items-center justify-center gap-3 mb-3">
@@ -102,7 +77,7 @@ function SectionLabel({ children }) {
   )
 }
 
-// ── Live stats hook (Firestore) ───────────────────────────────
+// â”€â”€ Live stats hook (Firestore) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function useLiveStats() {
   const [stats, setStats] = useState({
     total: 0,
@@ -133,163 +108,57 @@ function useLiveStats() {
   return stats
 }
 
-// ── Meenakshi Gopuram Silhouette SVG (decorative) ──────────
-function GopuramSilhouette({ size = 300, opacity = 0.08 }) {
-  const h = Math.round(size * 1.5)
-  return (
-    <svg
-      width={size}
-      height={h}
-      viewBox="0 0 200 300"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-      style={{ opacity }}
-    >
-      {/* Base platform */}
-      <rect x="0" y="270" width="200" height="30" fill="white" rx="3"/>
-      {/* Tier 1 — widest */}
-      <rect x="22" y="232" width="156" height="38" fill="white" rx="2"/>
-      <rect x="16" y="225" width="168" height="9" fill="white" rx="2"/>
-      {/* Small decorative niches tier 1 */}
-      <rect x="34" y="239" width="12" height="20" fill="white" opacity="0.3" rx="2"/>
-      <rect x="94" y="239" width="12" height="20" fill="white" opacity="0.3" rx="2"/>
-      <rect x="154" y="239" width="12" height="20" fill="white" opacity="0.3" rx="2"/>
-      {/* Tier 2 */}
-      <rect x="36" y="196" width="128" height="36" fill="white" rx="2"/>
-      <rect x="30" y="189" width="140" height="9" fill="white" rx="2"/>
-      <rect x="48" y="203" width="10" height="18" fill="white" opacity="0.3" rx="2"/>
-      <rect x="95" y="203" width="10" height="18" fill="white" opacity="0.3" rx="2"/>
-      <rect x="142" y="203" width="10" height="18" fill="white" opacity="0.3" rx="2"/>
-      {/* Tier 3 */}
-      <rect x="50" y="162" width="100" height="34" fill="white" rx="2"/>
-      <rect x="44" y="155" width="112" height="9" fill="white" rx="2"/>
-      <rect x="60" y="169" width="9" height="16" fill="white" opacity="0.3" rx="2"/>
-      <rect x="96" y="169" width="9" height="16" fill="white" opacity="0.3" rx="2"/>
-      <rect x="132" y="169" width="9" height="16" fill="white" opacity="0.3" rx="2"/>
-      {/* Tier 4 */}
-      <rect x="62" y="130" width="76" height="32" fill="white" rx="2"/>
-      <rect x="57" y="123" width="86" height="9" fill="white" rx="2"/>
-      <rect x="71" y="137" width="8" height="14" fill="white" opacity="0.3" rx="2"/>
-      <rect x="96" y="137" width="8" height="14" fill="white" opacity="0.3" rx="2"/>
-      <rect x="121" y="137" width="8" height="14" fill="white" opacity="0.3" rx="2"/>
-      {/* Tier 5 */}
-      <rect x="72" y="100" width="56" height="30" fill="white" rx="2"/>
-      <rect x="68" y="93" width="64" height="9" fill="white" rx="2"/>
-      <rect x="80" y="107" width="7" height="12" fill="white" opacity="0.3" rx="2"/>
-      <rect x="97" y="107" width="7" height="12" fill="white" opacity="0.3" rx="2"/>
-      <rect x="114" y="107" width="7" height="12" fill="white" opacity="0.3" rx="2"/>
-      {/* Tier 6 */}
-      <rect x="80" y="73" width="40" height="27" fill="white" rx="2"/>
-      <rect x="76" y="66" width="48" height="9" fill="white" rx="2"/>
-      <rect x="88" y="80" width="6" height="10" fill="white" opacity="0.3" rx="2"/>
-      <rect x="107" y="80" width="6" height="10" fill="white" opacity="0.3" rx="2"/>
-      {/* Tier 7 */}
-      <rect x="86" y="49" width="28" height="24" fill="white" rx="2"/>
-      <rect x="83" y="42" width="34" height="9" fill="white" rx="2"/>
-      {/* Tier 8 — top */}
-      <rect x="91" y="28" width="18" height="21" fill="white" rx="2"/>
-      <rect x="89" y="21" width="22" height="9" fill="white" rx="1"/>
-      {/* Kalasha finial */}
-      <ellipse cx="100" cy="16" rx="9" ry="7" fill="white"/>
-      <rect x="97" y="6" width="6" height="11" fill="white"/>
-      <ellipse cx="100" cy="4" rx="5" ry="5" fill="white"/>
-      <circle cx="100" cy="0" r="4" fill="white"/>
-    </svg>
-  )
-}
 
-// ── HERO SECTION ─────────────────────────────────────────────
+
+// â”€â”€ HERO SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden py-20 md:py-28"
+      className="relative overflow-hidden bg-white"
       style={{
-        background: 'linear-gradient(135deg, var(--color-gov-900) 0%, var(--color-gov-800) 50%, var(--color-gov-700) 100%)',
+        minHeight: '92vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
       }}
       aria-labelledby="hero-heading"
     >
-      {/* Meenakshi Gopuram silhouette — right side, evokes Madurai identity */}
-      <div className="absolute right-0 bottom-0 pointer-events-none select-none hidden md:block">
-        <GopuramSilhouette size={290} opacity={0.09} />
-      </div>
-      {/* Decorative Ashoka Chakra — small, bottom left */}
-      <div className="absolute -left-12 bottom-0 pointer-events-none select-none">
-        <AshokaDeco size={220} opacity={0.04} />
-      </div>
-
-      {/* Tricolor bottom fade */}
+      {/* Tricolor bottom accent */}
       <div
         className="absolute bottom-0 left-0 right-0 h-1"
         style={{
-          background: 'linear-gradient(to right, var(--color-saffron) 0% 33.33%, rgba(255,255,255,0.4) 33.33% 66.66%, var(--color-tri-green) 66.66% 100%)',
+          background: 'linear-gradient(to right, #FF9933 0% 33.33%, #e5e7eb 33.33% 66.66%, #138808 66.66% 100%)',
         }}
         aria-hidden="true"
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="max-w-2xl">
-          {/* Badge */}
-          <div className="mb-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/10 text-white border border-white/20">
-            <span
-              className="w-1.5 h-1.5 rounded-full animate-pulse"
-              style={{ background: 'var(--color-tri-green)' }}
-              aria-hidden="true"
-            />
-            Live &middot; Corporation of Madurai &middot; Est. 1866 &middot; 100 Wards
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 w-full">
+        <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
+
+          {/* Animated tagline pill */}
+          <div className="mb-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase bg-[var(--color-gov-50)] text-[var(--color-gov-700)] border border-[var(--color-gov-200)]">
+            <span className="w-2 h-2 rounded-full animate-pulse bg-emerald-400" aria-hidden="true" />
+            Report &nbsp;&middot;&nbsp; Analyse &nbsp;&middot;&nbsp; Resolve
           </div>
 
-          {/* Headline */}
+          {/* Heading */}
           <h1
             id="hero-heading"
-            className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-5"
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[var(--color-gov-900)] leading-tight tracking-tight mb-6"
           >
             AI-Powered{' '}
-            <span
-              className="relative inline-block"
-              style={{ color: 'var(--color-saffron)' }}
-            >
+            <span style={{ color: 'var(--color-gov-700)' }}>
               Clean Madurai
-              <span
-                className="absolute bottom-0.5 left-0 right-0 h-0.5 rounded-full opacity-60"
-                style={{ background: 'var(--color-saffron)' }}
-                aria-hidden="true"
-              />
             </span>
           </h1>
 
-          {/* Subtext */}
-          <p className="text-lg text-blue-100 leading-relaxed mb-2 max-w-xl">
-            Preventive civic sanitation powered by real-time AI analysis.
-            Citizens report, AI evaluates, municipalities act &mdash; restoring dignity
-            and cleanliness to every ward in Madurai.
+          {/* Subtitle */}
+          <p className="text-lg md:text-xl text-[var(--color-gov-700)] leading-relaxed mb-8 max-w-2xl">
+            Report waste in 30 seconds. AI handles the rest &mdash; analysis, dispatch, and verified cleanup.
           </p>
-          <p className="text-xs text-blue-300 mb-8 max-w-lg">
-            An initiative of the Madurai City Municipal Corporation, Government of Tamil Nadu.
-            &nbsp;&middot;&nbsp; Arignar Anna Maligai, Thallakulam, Madurai &mdash; 625 002.
-            &nbsp;&middot;&nbsp;
-            <a href="tel:+914522540333" className="underline hover:text-white">+91 452 2540333</a>
-          </p>
-
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {[
-              { icon: <HiCpuChip className="w-3.5 h-3.5" />, label: 'AI Waste Analysis' },
-              { icon: <HiMapPin className="w-3.5 h-3.5" />, label: 'Live Heatmap' },
-              { icon: <HiBolt className="w-3.5 h-3.5" />, label: 'Real-Time Dispatch' },
-              { icon: <HiChartBar className="w-3.5 h-3.5" />, label: 'Predictive Hotspots' },
-            ].map(({ icon, label }) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-blue-50 border border-white/15"
-              >
-                <span aria-hidden="true">{icon}</span> {label}
-              </span>
-            ))}
-          </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
             <HeroButton to="/report" variant="primary">
               <HiCamera className="w-5 h-5" aria-hidden="true" />
               Raise a Complaint
@@ -299,13 +168,48 @@ function HeroSection() {
               Citizen Login
             </HeroButton>
           </div>
+
+          {/* Glassmorphic feature cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-2xl">
+            {[
+              {
+                icon: <HiClipboardDocument className="w-6 h-6" />,
+                title: 'Live Complaints',
+                desc: 'Real-time updates on filed reports',
+              },
+              {
+                icon: <HiMapPin className="w-6 h-6" />,
+                title: 'Active Zones',
+                desc: 'Monitor high-burden Madurai wards',
+              },
+              {
+                icon: <HiCpuChip className="w-6 h-6" />,
+                title: 'AI Analysis',
+                desc: 'Instant waste classification & scoring',
+              },
+            ].map(({ icon, title, desc }) => (
+              <div
+                key={title}
+                className="flex flex-col items-center gap-2 p-5 rounded-xl text-center transition-transform hover:-translate-y-1"
+                style={{
+                  background: 'var(--color-gov-50)',
+                  border: '1px solid var(--color-gov-200)',
+                }}
+              >
+                <span className="text-[var(--color-gov-700)]">{icon}</span>
+                <p className="text-sm font-bold text-[var(--color-gov-900)]">{title}</p>
+                <p className="text-xs text-[var(--color-gov-600)] leading-snug">{desc}</p>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </section>
   )
 }
 
-// ── LIVE STATISTICS SECTION ───────────────────────────────────
+// â”€â”€ LIVE STATISTICS SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function StatsSection({ stats }) {
   const cards = [
     {
@@ -344,19 +248,15 @@ function StatsSection({ stats }) {
   ]
 
   return (
-    <section className="py-16 bg-[var(--color-surface)]" aria-labelledby="stats-heading">
+    <section className="py-16 bg-[#f8fafc]" aria-labelledby="stats-heading">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <SectionLabel>Live Statistics</SectionLabel>
         <h2
           id="stats-heading"
-          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-2"
+          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-10"
         >
-          Real-Time Sanitation Pulse
+          Live Stats
         </h2>
-        <p className="text-center text-sm text-[var(--color-muted)] mb-10 max-w-lg mx-auto">
-          Data updated live from Firestore. Every complaint registered by a citizen
-          is tracked end-to-end until clearance is verified.
-        </p>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {cards.map((card) => (
@@ -380,26 +280,21 @@ function StatsSection({ stats }) {
   )
 }
 
-// ── BEFORE vs AFTER SECTION ───────────────────────────────────
+// â”€â”€ BEFORE vs AFTER SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function BeforeAfterSection() {
   return (
     <section
-      className="py-16"
-      style={{ background: 'linear-gradient(180deg, var(--color-surface) 0%, #e8edf4 100%)' }}
+      className="py-16 bg-white"
       aria-labelledby="before-after-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <SectionLabel>Impact Evidence</SectionLabel>
         <h2
           id="before-after-heading"
-          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-2"
+          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-10"
         >
-          Transformation on Every Street
+          Before &amp; After
         </h2>
-        <p className="text-center text-sm text-[var(--color-muted)] mb-10 max-w-lg mx-auto">
-          AI-powered complaint triage enables faster crew dispatch, turning civic
-          neglect into clean, safe public spaces within hours.
-        </p>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <BeforeAfterCard type="before" />
@@ -411,9 +306,9 @@ function BeforeAfterSection() {
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-gov-700)]">
             <HiCpuChip className="w-4 h-4" aria-hidden="true" />
             AI Triages Complaint
-            <span aria-hidden="true"> → </span>
+            <span aria-hidden="true"> â†’ </span>
             Municipality Dispatches
-            <span aria-hidden="true"> → </span>
+            <span aria-hidden="true"> â†’ </span>
             Cleanup Verified
             <HiCheckCircle className="w-4 h-4" aria-hidden="true" />
           </div>
@@ -423,53 +318,52 @@ function BeforeAfterSection() {
   )
 }
 
-// ── AI IMPACT FEATURES SECTION ────────────────────────────────
+// â”€â”€ AI IMPACT FEATURES SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FEATURES = [
   {
     icon: <HiCpuChip className="w-6 h-6" />,
     title: 'AI Waste Analysis',
     description:
-      'Deep-learning model classifies waste type, severity, and estimated volume from citizen-submitted photographs within seconds of upload.',
+      'Classifies waste type and severity from photos in seconds.',
     accent: 'var(--color-gov-700)',
   },
   {
     icon: <HiMapPin className="w-6 h-6" />,
     title: 'Real-Time Heatmap Monitoring',
     description:
-      'Geospatial density map of active complaints updates live — officers identify high-burden wards at a glance for priority dispatch.',
+      'Live density map of active complaints across Madurai wards.',
     accent: '#1557a0',
   },
   {
     icon: <HiSparkles className="w-6 h-6" />,
     title: 'Predictive Hotspot Detection',
     description:
-      'Historical complaint patterns and seasonal data power a predictive model that flags zones likely to require intervention before escalation.',
+      'Flags zones likely to need cleanup before issues escalate.',
     accent: '#7c3aed',
   },
   {
     icon: <HiTruck className="w-6 h-6" />,
     title: 'Workforce Optimisation',
     description:
-      "Route planning algorithms assign crews with minimal travel overlap — cutting clearance time and fuel consumption across Madurai's wards.",
+      'Optimised crew routing to cut clearance time and costs.',
     accent: '#138808',
   },
 ]
 
 function FeaturesSection() {
   return (
-    <section className="py-16 bg-[var(--color-surface)]" aria-labelledby="features-heading">
+    <section
+      className="py-16 bg-[#f8fafc]"
+      aria-labelledby="features-heading"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <SectionLabel>AI Capabilities</SectionLabel>
         <h2
           id="features-heading"
-          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-2"
+          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-10"
         >
-          Intelligent Governance at Scale
+          AI Capabilities
         </h2>
-        <p className="text-center text-sm text-[var(--color-muted)] mb-10 max-w-lg mx-auto">
-          Every layer of M-Clean is purpose-built to turn raw citizen data into
-          measurable civic improvement, automatically.
-        </p>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {FEATURES.map((f) => (
@@ -481,59 +375,52 @@ function FeaturesSection() {
   )
 }
 
-// ── PROCESS TIMELINE SECTION ──────────────────────────────────
+// â”€â”€ PROCESS TIMELINE SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const TIMELINE_STEPS = [
   {
     step: 1,
     icon: <HiCamera className="w-5 h-5" />,
     title: 'Citizen Files Complaint',
     description:
-      'A resident photographs the waste site, pins the GPS location, and submits via the M-Clean portal or mobile PWA.',
+      'Photo + GPS location submitted in under 30 seconds.',
   },
   {
     step: 2,
     icon: <HiCpuChip className="w-5 h-5" />,
     title: 'AI Analyses the Waste',
     description:
-      'Vision AI classifies waste category and severity. A priority score is assigned and the complaint is auto-tagged for the right ward officer.',
+      'AI scores severity and routes to the right ward officer.',
   },
   {
     step: 3,
     icon: <HiTruck className="w-5 h-5" />,
     title: 'Municipality Dispatches Crew',
     description:
-      'The officer dashboard surfaces high-priority complaints. Crew routes are optimised via the Workforce Panel and dispatched immediately.',
+      'Officer dispatches crew via optimised route planning.',
   },
   {
     step: 4,
     icon: <HiCheckCircle className="w-5 h-5" />,
     title: 'Cleanup Verified & Closed',
     description:
-      'Field crew uploads a completion photo. AI verifies the site is clear, status moves to "Cleared", and the citizen receives confirmation.',
+      'AI verifies cleanup from photo. Citizen notified instantly.',
   },
 ]
 
 function TimelineSection() {
   return (
     <section
-      className="py-16"
-      style={{
-        background: 'linear-gradient(180deg, #e8edf4 0%, var(--color-surface) 100%)',
-      }}
+      className="py-16 bg-white"
       aria-labelledby="timeline-heading"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <SectionLabel>How It Works</SectionLabel>
         <h2
           id="timeline-heading"
-          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-2"
+          className="text-center text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-12"
         >
-          From Report to Resolution
+          How It Works
         </h2>
-        <p className="text-center text-sm text-[var(--color-muted)] mb-12 max-w-lg mx-auto">
-          A fully automated civic pipeline — zero manual follow-up needed for the
-          citizen once a complaint is filed.
-        </p>
 
         {/* Timeline row */}
         <div className="flex flex-col md:flex-row gap-8 md:gap-4">
@@ -550,21 +437,18 @@ function TimelineSection() {
   )
 }
 
-// ── CALL-TO-ACTION BANNER ─────────────────────────────────────
+// â”€â”€ CALL-TO-ACTION BANNER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CTABanner() {
   return (
     <section
-      className="py-16 relative overflow-hidden"
-      style={{
-        background: 'linear-gradient(135deg, var(--color-gov-800) 0%, var(--color-gov-900) 100%)',
-      }}
+      className="py-16 relative overflow-hidden bg-white border-t border-[var(--color-gov-100)]"
       aria-labelledby="cta-heading"
     >
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            'radial-gradient(circle at 20% 50%, rgba(255,153,51,0.08) 0%, transparent 60%), radial-gradient(circle at 80% 50%, rgba(19,136,8,0.08) 0%, transparent 60%)',
+            'radial-gradient(circle at 20% 50%, rgba(16,64,128,0.04) 0%, transparent 60%), radial-gradient(circle at 80% 50%, rgba(16,64,128,0.04) 0%, transparent 60%)',
         }}
         aria-hidden="true"
       />
@@ -572,44 +456,33 @@ function CTABanner() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 text-center">
         <span
           className="inline-block mb-4" aria-hidden="true"
-          style={{ color: 'var(--color-saffron)', filter: 'drop-shadow(0 2px 8px rgba(255,153,51,0.4))' }}
+          style={{ color: 'var(--color-gov-700)', filter: 'drop-shadow(0 2px 8px rgba(16,64,128,0.25))' }}
         >
           <HiSparkles className="w-10 h-10 mx-auto" />
         </span>
         <h2
           id="cta-heading"
-          className="text-2xl md:text-3xl font-extrabold text-white mb-4 leading-tight"
+          className="text-2xl md:text-3xl font-extrabold text-[var(--color-gov-900)] mb-4 leading-tight"
         >
-          Make Madurai Cleaner — One Report at a Time
+          Make Madurai Cleaner
         </h2>
-        <p className="text-blue-200 text-sm md:text-base mb-2 max-w-lg mx-auto leading-relaxed">
-          Your complaint takes 30 seconds to file. Our AI handles the rest —
-          analysis, dispatch, and verified cleanup. Join thousands of active citizens.
-        </p>
-        <p className="text-xs text-blue-400 mb-8">
-          Official AI sanitation portal of the Corporation of Madurai, Tamil Nadu &mdash;
-          <a href="https://maduraicorporation.co.in" target="_blank" rel="noopener noreferrer"
-            className="underline hover:text-white ml-1">maduraicorporation.co.in</a>
+        <p className="text-[var(--color-gov-700)] text-sm mb-6 max-w-sm mx-auto">
+          30 seconds to report. AI handles the rest.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-4 mb-8">
-          <Link
-            to="/report"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-lg font-bold text-base tracking-wide transition-all duration-200 active:scale-95 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-            style={{ background: 'var(--color-saffron)', color: 'white' }}
-          >
+          <HeroButton to="/report">
             <HiCamera className="w-5 h-5" aria-hidden="true" />
             Raise a Complaint Now
-          </Link>
-
+          </HeroButton>
         </div>
 
         {/* Trust badges */}
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-blue-300">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[var(--color-gov-600)]">
           {[
             { icon: <HiBolt className="w-3.5 h-3.5" />, label: 'Powered by Google Firebase' },
             { icon: <HiMapPin className="w-3.5 h-3.5" />, label: 'Google Maps Platform' },
-            { icon: <HiCpuChip className="w-3.5 h-3.5" />, label: 'Vertex AI · Vision API' },
+            { icon: <HiCpuChip className="w-3.5 h-3.5" />, label: 'Vertex AI ·· Vision API' },
             { icon: <HiFlag className="w-3.5 h-3.5" />, label: 'Swachh Bharat Mission' },
             { icon: <HiGlobeAlt className="w-3.5 h-3.5" />, label: 'maduraicorporation.co.in' },
           ].map(({ icon, label }) => (
@@ -624,7 +497,7 @@ function CTABanner() {
   )
 }
 
-// ── STAT HIGHLIGHT TICKER (narrow band above CTA) ─────────────
+// â”€â”€ STAT HIGHLIGHT TICKER (narrow band above CTA) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function StatTicker({ stats }) {
   if (stats.loading || stats.total === 0) return null
 
@@ -633,19 +506,18 @@ function StatTicker({ stats }) {
     `${stats.cleared.toLocaleString('en-IN')} cleanups verified`,
     `${stats.rate}% clearance rate`,
     `${stats.pending.toLocaleString('en-IN')} complaints pending`,
-    'Corporation of Madurai · Est. 1866',
-    '100 Wards · 147.99 Sq.Km · 5 Zones',
+    'Corporation of Madurai ·· Est. 1866',
+    '100 Wards ·· 147.99 Sq.Km ·· 5 Zones',
   ]
 
   return (
     <div
-      className="py-2 overflow-hidden"
-      style={{ background: 'var(--color-gov-700)' }}
+      className="py-2 overflow-hidden bg-[var(--color-gov-50)] border-y border-[var(--color-gov-100)]"
       aria-label="Live statistics ticker"
     >
       <div className="flex items-center gap-8 px-6">
         {items.map((item, i) => (
-          <span key={i} className="text-xs font-semibold text-white whitespace-nowrap flex items-center gap-2">
+            <span key={i} className="text-xs font-semibold text-[var(--color-gov-700)] whitespace-nowrap flex items-center gap-2">
             <span
               className="w-1 h-1 rounded-full"
               style={{ background: 'var(--color-saffron)' }}
@@ -659,7 +531,7 @@ function StatTicker({ stats }) {
   )
 }
 
-// ── PAGE ENTRY POINT ─────────────────────────────────────────
+// â”€â”€ PAGE ENTRY POINT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function LandingPage() {
   const stats = useLiveStats()
 

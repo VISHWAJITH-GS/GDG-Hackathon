@@ -188,14 +188,12 @@ function GovLayout({ children }) {
       <EnvBanner />
 
       {/* ── 7. Page content ── */}
-      <main id="main-content" className="flex-1 bg-[var(--color-surface)]">
+      <main id="main-content" className="flex-1 bg-white">
         {children}
       </main>
 
-      {/* ── 7. Footer ── */}
+      {/* ── Footer ── */}
       <footer className="bg-[var(--color-gov-900)] text-white mt-auto">
-        {/* Tricolor top accent */}
-        <div className="tricolor-stripe" aria-hidden="true" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <div className="grid sm:grid-cols-3 gap-6 text-sm">
