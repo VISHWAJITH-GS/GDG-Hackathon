@@ -8,40 +8,36 @@
 // --------------------------------------------------
 
 const VARIANTS = {
-    // Glassy deep-blue — highlights on hover, orange on press
+    // White bg + blue border → blue bg on hover
     primary: [
-        'text-white border border-white/20',
-        '[background:linear-gradient(160deg,rgba(21,87,160,0.92)_0%,rgba(10,52,104,0.96)_100%)]',
-        'shadow-[0_4px_14px_rgba(16,64,128,0.28),inset_0_1px_0_rgba(255,255,255,0.15)]',
-        'hover:[background:linear-gradient(160deg,rgba(26,107,191,0.95)_0%,rgba(16,64,128,0.98)_100%)]',
-        'hover:shadow-[0_6px_20px_rgba(16,64,128,0.38),inset_0_1px_0_rgba(255,255,255,0.18)] hover:-translate-y-px',
-        'active:![background:linear-gradient(160deg,rgba(234,88,12,0.95)_0%,rgba(194,65,12,0.98)_100%)]',
-        'active:!border-orange-500/50 active:!shadow-[0_2px_8px_rgba(234,88,12,0.4)] active:translate-y-0 active:scale-[0.99]',
-        'backdrop-blur-sm',
+        'bg-white text-[#104080] border border-[#104080]',
+        'shadow-[0_2px_8px_rgba(16,64,128,0.12)]',
+        'hover:bg-[#104080] hover:text-white hover:border-[#104080] hover:-translate-y-px',
+        'hover:shadow-[0_6px_18px_rgba(16,64,128,0.30)]',
+        'active:!bg-[#0a3468] active:!border-[#0a3468] active:translate-y-0 active:scale-[0.99]',
     ].join(' '),
 
-    // Glassy white / outline — orange border + text on press
+    // White bg + blue border → blue bg on hover
     secondary: [
-        'bg-white/50 border-[1.5px] border-[#104080]/40 text-[#104080]',
-        'backdrop-blur-sm',
-        'shadow-[0_2px_8px_rgba(16,64,128,0.08),inset_0_1px_0_rgba(255,255,255,0.6)]',
-        'hover:bg-white/80 hover:shadow-[0_4px_12px_rgba(16,64,128,0.15)] hover:-translate-y-px',
-        'active:!bg-orange-50 active:!border-orange-500 active:!text-orange-600 active:translate-y-0 active:scale-[0.99]',
+        'bg-white text-[#104080] border border-[#104080]',
+        'shadow-[0_2px_8px_rgba(16,64,128,0.08)]',
+        'hover:bg-[#104080] hover:text-white hover:-translate-y-px',
+        'hover:shadow-[0_4px_14px_rgba(16,64,128,0.22)]',
+        'active:!bg-[#0a3468] active:!border-[#0a3468] active:translate-y-0 active:scale-[0.99]',
     ].join(' '),
 
     ghost: [
-        'bg-transparent border border-[#D1D9E6] text-[#104080]',
-        'hover:bg-[#f4f6f9] hover:-translate-y-px',
-        'active:!bg-orange-50 active:!border-orange-400 active:!text-orange-600 active:translate-y-0 active:scale-[0.99]',
+        'bg-white text-[#104080] border border-[#104080]/50',
+        'hover:bg-[#104080] hover:text-white hover:border-[#104080] hover:-translate-y-px',
+        'active:!bg-[#0a3468] active:translate-y-0 active:scale-[0.99]',
     ].join(' '),
 
     danger: [
-        'text-white border border-[#B22222]/30',
-        '[background:linear-gradient(160deg,rgba(178,34,34,0.9)_0%,rgba(139,26,26,0.95)_100%)]',
-        'shadow-[0_4px_14px_rgba(178,34,34,0.25),inset_0_1px_0_rgba(255,255,255,0.12)]',
-        'hover:[background:linear-gradient(160deg,rgba(185,40,40,0.95)_0%,rgba(150,30,30,0.98)_100%)] hover:-translate-y-px',
-        'active:![background:linear-gradient(160deg,rgba(234,88,12,0.95)_0%,rgba(194,65,12,0.98)_100%)] active:translate-y-0 active:scale-[0.99]',
-        'backdrop-blur-sm',
+        'bg-white text-[#B22222] border border-[#B22222]',
+        'shadow-[0_2px_8px_rgba(178,34,34,0.12)]',
+        'hover:bg-[#B22222] hover:text-white hover:-translate-y-px',
+        'hover:shadow-[0_4px_14px_rgba(178,34,34,0.28)]',
+        'active:!bg-[#8b1a1a] active:!border-[#8b1a1a] active:translate-y-0 active:scale-[0.99]',
     ].join(' '),
 }
 
