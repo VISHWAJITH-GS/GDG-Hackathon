@@ -1,6 +1,6 @@
 // =============================================================================
 // functions/index.js
-// Firebase Cloud Functions — M-Clean | Madurai Municipal Corporation
+// Firebase Cloud Functions — Aqro  | Madurai Municipal Corporation
 //
 // Exported functions:
 //   1. analyzeWaste        - HTTP POST: Vision → Gemini → Firestore pipeline

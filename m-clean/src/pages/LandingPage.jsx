@@ -1,6 +1,6 @@
 // src/pages/LandingPage.jsx
 // ─────────────────────────────────────────────────────────────
-// M-Clean �� AI-Powered Civic Sanitation Portal
+// Aqro  �� AI-Powered Civic Sanitation Portal
 // Public landing page for hackathon demo � Madurai, Tamil Nadu
 //
 // Sections:
@@ -130,7 +130,7 @@ function useLiveStats() {
         setStats({ total, cleared, pending, rate, loading: false })
       },
       (err) => {
-        console.error('[M-Clean] Firestore stats error:', err)
+        console.error('[Aqro ] Firestore stats error:', err)
         setStats((s) => ({ ...s, loading: false }))
       }
     )
@@ -146,7 +146,7 @@ function useLiveStats() {
 function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden bg-[var(--color-gov-50)]"
+      className="relative overflow-hidden"
       style={{
         minHeight: '92vh',
         display: 'flex',
@@ -155,32 +155,50 @@ function HeroSection() {
       }}
       aria-labelledby="hero-heading"
     >
+      {/* Background video */}
+      <video
+        className="absolute inset-0 w-full h-full object-cover"
+        src="/videos/Final Background video.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+      />
+
+      {/* Dark overlay for text readability */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'rgba(0, 10, 30, 0.62)' }}
+        aria-hidden="true"
+      />
+
       {/* Tricolor bottom accent */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-1"
+        className="absolute bottom-0 left-0 right-0 h-1 z-10"
         style={{
           background: 'linear-gradient(to right, #FF9933 0% 33.33%, #e5e7eb 33.33% 66.66%, #138808 66.66% 100%)',
         }}
         aria-hidden="true"
       />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-24 md:py-32 w-full">
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
-
 
           {/* Heading */}
           <h1
             id="hero-heading"
-            className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-[var(--color-gov-900)] leading-tight tracking-tight mb-6"
+            className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white leading-tight tracking-tight mb-6"
+            style={{ textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}
           >
-            AI-Powered{' '}
-            <span style={{ color: 'var(--color-gov-700)' }}>
-              Clean Madurai
+            AQRO Integrated,{' '}
+            <span style={{ color: '#6ee7f7' }}>
+              Sanitation System
             </span>
           </h1>
 
           {/* Subtitle */}
-          <p className="text-lg md:text-xl text-[var(--color-gov-700)] leading-relaxed mb-8 max-w-2xl">
+          <p className="text-lg md:text-xl text-slate-200 leading-relaxed mb-8 max-w-2xl">
             Report waste in 30 seconds. AI handles the rest &mdash; analysis, dispatch, and verified cleanup.
           </p>
 
@@ -227,13 +245,14 @@ function HeroSection() {
                 key={title}
                 className="flex flex-col items-center gap-2 p-5 rounded-xl text-center transition-transform hover:-translate-y-1"
                 style={{
-                  background: 'var(--color-gov-50)',
-                  border: '1px solid var(--color-gov-200)',
+                  background: 'rgba(255,255,255,0.10)',
+                  border: '1px solid rgba(255,255,255,0.20)',
+                  backdropFilter: 'blur(10px)',
                 }}
               >
-                <span className="text-[var(--color-gov-700)]">{icon}</span>
-                <p className="text-sm font-bold text-[var(--color-gov-900)]">{title}</p>
-                <p className="text-xs text-[var(--color-gov-600)] leading-snug">{desc}</p>
+                <span className="text-cyan-300">{icon}</span>
+                <p className="text-sm font-bold text-white">{title}</p>
+                <p className="text-xs text-slate-300 leading-snug">{desc}</p>
               </div>
             ))}
           </div>

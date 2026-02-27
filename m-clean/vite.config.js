@@ -19,8 +19,8 @@ export default defineConfig({
 
       // Web App Manifest — defines how the app looks when installed
       manifest: {
-        name: 'm-clean',
-        short_name: 'm-clean',
+        name: 'Aqro ',
+        short_name: 'Aqro ',
         description: 'Cleanliness reporting & officer dashboard PWA',
         theme_color: '#0f172a',
         background_color: '#0f172a',

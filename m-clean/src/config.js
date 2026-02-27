@@ -1,6 +1,6 @@
 // src/config.js
 // ---------------------------------------------------------------
-// Central environment configuration for M-Clean.
+// Central environment configuration for Aqro .
 // All env variables are read ONCE here and exported as constants.
 // Components import from here — never from import.meta.env directly.
 // ---------------------------------------------------------------
@@ -26,16 +26,16 @@ export const MAPS_CONFIGURED =
 // ── Console warnings at module load time ──────────────────────
 if (!FUNCTIONS_CONFIGURED) {
     console.error(
-        '[M-Clean] ⚠️  VITE_FUNCTIONS_BASE_URL is missing or invalid.\n' +
-        '           Add it to m-clean/.env:\n' +
+        '[Aqro ] ⚠️  VITE_FUNCTIONS_BASE_URL is missing or invalid.\n' +
+        '           Add it to Aqro /.env:\n' +
         '           VITE_FUNCTIONS_BASE_URL=https://asia-south1-madurai-clean-ai-ffce1.cloudfunctions.net'
     )
 }
 
 if (!MAPS_CONFIGURED) {
     console.error(
-        '[M-Clean] ⚠️  VITE_GOOGLE_MAPS_API_KEY is missing or invalid.\n' +
-        '           Add it to m-clean/.env:\n' +
+        '[Aqro ] ⚠️  VITE_GOOGLE_MAPS_API_KEY is missing or invalid.\n' +
+        '           Add it to Aqro /.env:\n' +
         '           VITE_GOOGLE_MAPS_API_KEY=<your_key>'
     )
 }

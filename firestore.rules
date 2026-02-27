@@ -1,6 +1,6 @@
 rules_version = '2';
 // ---------------------------------------------------------------
-// M-Clean Firestore Security Rules
+// Aqro  Firestore Security Rules
 // ---------------------------------------------------------------
 // Role hierarchy (stored in users/{uid}.role):
 //   "citizen"      — public user: file and read own reports

@@ -17,7 +17,7 @@ export default function Navbar() {
             <div className="max-w-5xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
                 <span className="flex items-center gap-2 select-none">
                     <span className="font-bold text-lg text-[#104080] tracking-tight">
-                        M-Clean
+                        Aqro 
                     </span>
                 </span>
 

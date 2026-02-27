@@ -12,7 +12,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Reports (m-clean reports collection)
+    // Reports (Aqro  reports collection)
     match /reports/{reportId} {
       allow read, update: if request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role

@@ -1,6 +1,6 @@
 {
   "name": "mclean-functions",
-  "description": "Firebase Cloud Functions for M-Clean / Madurai Municipal Corporation",
+  "description": "Firebase Cloud Functions for Aqro  / Madurai Municipal Corporation",
   "scripts": {
     "lint": "eslint .",
     "serve": "firebase emulators:start --only functions",

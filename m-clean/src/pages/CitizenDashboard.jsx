@@ -142,7 +142,7 @@ export default function CitizenDashboard() {
         </div>
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
           <div>
-            <p className="text-xs opacity-70 uppercase tracking-wider">M-Clean Portal</p>
+            <p className="text-xs opacity-70 uppercase tracking-wider">Aqro  Portal</p>
             <h1 className="text-base font-bold leading-tight">Citizen Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">

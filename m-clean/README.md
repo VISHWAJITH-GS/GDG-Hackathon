@@ -1,11 +1,11 @@
-# M-Clean – Civic Sanitation Intelligence
+# Aqro  – Civic Sanitation Intelligence
 
 **Government of Tamil Nadu**  
 **Madurai Municipal Corporation**
 
 ## Overview
 
-M-Clean is an official government portal for citizen-driven sanitation reporting and grievance redressal. The system enables real-time waste management monitoring, AI-powered hotspot detection, and workforce allocation for the Madurai Municipal Corporation.
+Aqro  is an official government portal for citizen-driven sanitation reporting and grievance redressal. The system enables real-time waste management monitoring, AI-powered hotspot detection, and workforce allocation for the Madurai Municipal Corporation.
 
 ## Features
 

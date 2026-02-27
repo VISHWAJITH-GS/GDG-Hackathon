@@ -99,12 +99,12 @@ export default function AdminLoginPage() {
               Admin Portal
             </h1>
             <p className="mt-1 text-xs text-slate-500 text-center">
-              M-Clean — Authorised Personnel Only
+              Aqro  — Authorised Personnel Only
             </p>
             {/* Restricted access notice */}
             <div className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-xs text-amber-800 text-center flex items-center justify-center gap-2">
               <HiLockClosed className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-              This portal is restricted to M-Clean administrators
+              This portal is restricted to Aqro  administrators
             </div>
           </div>
 

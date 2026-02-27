@@ -237,7 +237,7 @@ export default function AdminLogin() {
               Municipality Control Panel
             </h1>
             <p className="mt-1 text-xs text-slate-500 text-center font-medium tracking-wide uppercase">
-              M-Clean · Municipal Officer Portal
+              Aqro  · Municipal Officer Portal
             </p>
           </div>
 
@@ -415,7 +415,7 @@ export default function AdminLogin() {
         </div>
 
         <p className="mt-5 text-center text-xs text-blue-200 opacity-50">
-          © {new Date().getFullYear()} Ministry of Urban Development · M-Clean Portal
+          © {new Date().getFullYear()} Ministry of Urban Development · Aqro  Portal
         </p>
       </div>
     </div>

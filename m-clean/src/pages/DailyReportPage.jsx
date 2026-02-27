@@ -431,7 +431,7 @@ export default function DailyReportPage() {
                             </div>
                             <div className="text-right">
                                 <p>Report Generated: {new Date().toLocaleString('en-IN')}</p>
-                                <p>M-Clean Sanitation Intelligence System</p>
+                                <p>Aqro  Sanitation Intelligence System</p>
                             </div>
                         </div>
                     </div>

@@ -421,7 +421,7 @@ export default function AdminDashboard() {
         </div>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs opacity-60 uppercase tracking-wider font-medium">M-Clean · Municipality Control Panel</p>
+            <p className="text-xs opacity-60 uppercase tracking-wider font-medium">Aqro  · Municipality Control Panel</p>
             <h1 className="text-sm sm:text-base font-bold leading-tight">Admin Dashboard</h1>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">

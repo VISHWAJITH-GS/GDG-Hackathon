@@ -90,7 +90,7 @@ function EnvBanner() {
           {missing.map((k) => (
             <code key={k} className="bg-amber-100 border border-amber-300 px-1 rounded mx-0.5">{k}</code>
           ))}
-          — add to <code className="bg-amber-100 border border-amber-300 px-1 rounded">m-clean/.env</code>
+          — add to <code className="bg-amber-100 border border-amber-300 px-1 rounded">Aqro /.env</code>
         </span>
       </div>
     </div>
@@ -144,7 +144,7 @@ function GovLayout({ children }) {
           {/* Portal title */}
           <div className="min-w-0">
             <h1 className="text-base sm:text-lg font-bold text-[var(--color-gov-900)] leading-tight tracking-tight truncate">
-              M-Clean &mdash; Madurai City Municipal Corporation
+              Aqro  &mdash; Madurai City Municipal Corporation
             </h1>
             <p className="text-xs text-[var(--color-muted)] leading-tight mt-0.5 truncate">
               Government of Tamil Nadu &mdash; AI-Enabled Civic Sanitation
@@ -218,7 +218,7 @@ function GovLayout({ children }) {
 
             {/* Col 1 — Brand */}
             <div className="space-y-3">
-              <p className="text-[#FF9933] text-xs font-bold uppercase tracking-widest">M-Clean Portal</p>
+              <p className="text-[#FF9933] text-xs font-bold uppercase tracking-widest">Aqro  Portal</p>
               <p className="text-sm font-semibold text-white leading-snug">
                 Corporation of Madurai
               </p>

@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────
 import { HiExclamationTriangle, HiCheckBadge } from 'react-icons/hi2'
 
-// Local images — place your files at m-clean/public/images/before.png and after.png
+// Local images — place your files at Aqro /public/images/before.png and after.png
 const BEFORE_IMG = '/images/before.png'
 const AFTER_IMG  = '/images/after.png'
 

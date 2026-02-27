@@ -132,7 +132,7 @@ export default function RegisterPage() {
               Create Citizen Account
             </h1>
             <p className="mt-1 text-xs text-slate-500 text-center">
-              M-Clean Portal — Citizen Registration
+              Aqro  Portal — Citizen Registration
             </p>
           </div>
 

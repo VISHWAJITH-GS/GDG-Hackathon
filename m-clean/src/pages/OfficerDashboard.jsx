@@ -1,6 +1,6 @@
 // src/pages/OfficerDashboard.jsx
 // ---------------------------------------------------------------
-// Officer Command Dashboard — M-Clean | Madurai Municipal Corporation
+// Officer Command Dashboard — Aqro  | Madurai Municipal Corporation
 //
 // All heavy UI is delegated to standalone components:
 //   DashboardStats, HotspotList, PredictionPanel,

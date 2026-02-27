@@ -1,6 +1,6 @@
 // src/pages/Landing.jsx
 // ---------------------------------------------------------------
-// M-Clean Landing Page — Tamil Nadu Government Official Portal
+// Aqro  Landing Page — Tamil Nadu Government Official Portal
 // Madurai Municipal Corporation
 // ---------------------------------------------------------------
 
@@ -134,11 +134,11 @@ export default function Landing() {
                         <a href="tel:+914522540333" className="hover:underline text-[var(--color-gov-700)]">+91 452 2540333</a>
                     </p>
                     <p className="text-lg sm:text-xl font-semibold text-[var(--color-gov-700)] mb-2">
-                        M-Clean: AI-Enabled Civic Sanitation Management System
+                        Aqro : AI-Enabled Civic Sanitation Management System
                     </p>
                     <p className="text-sm text-[var(--color-muted)] max-w-2xl mx-auto leading-relaxed mb-6">
                         Madurai &mdash; the &ldquo;Athens of the East&rdquo; &mdash; is the second-largest Municipal
-                        Corporation in Tamil Nadu. M-Clean leverages artificial intelligence to deliver
+                        Corporation in Tamil Nadu. Aqro  leverages artificial intelligence to deliver
                         transparent, citizen-driven sanitation management across all 100 wards.
                     </p>
                     {/* Corporation Quick Facts */}
@@ -183,7 +183,7 @@ export default function Landing() {
                 <div className="max-w-6xl mx-auto px-4 sm:px-6">
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-bold text-[var(--color-gov-800)] mb-2">
-                            Impact of M-Clean Initiative
+                            Impact of Aqro  Initiative
                         </h2>
                         <p className="text-sm text-[var(--color-muted)]">Visible improvements in civic cleanliness</p>
                     </div>
@@ -218,7 +218,7 @@ export default function Landing() {
                                         <HiCheckCircle className="w-12 h-12 text-green-600" />
                                     </div>
                                     <p className="text-sm font-semibold text-gray-600">Clean public spaces</p>
-                                    <p className="text-xs text-gray-500 mt-1">After M-Clean intervention</p>
+                                    <p className="text-xs text-gray-500 mt-1">After Aqro  intervention</p>
                                 </div>
                             </div>
                         </div>
@@ -231,7 +231,7 @@ export default function Landing() {
                 <div className="max-w-4xl mx-auto px-4 sm:px-6">
                     <div className="text-center mb-10">
                         <h2 className="text-2xl font-bold text-[var(--color-gov-800)] mb-2">
-                            How M-Clean Works
+                            How Aqro  Works
                         </h2>
                         <p className="text-sm text-[var(--color-muted)]">
                             AI-powered 4-step sanitation management process
@@ -242,7 +242,7 @@ export default function Landing() {
                         <ProcessStep
                             number="1"
                             title="Municipal Monitoring & Detection"
-                            description="Municipal officers and sanitation teams identify waste accumulation zones during routine patrols. Geo-tagged data is recorded in the M-Clean system for comprehensive tracking."
+                            description="Municipal officers and sanitation teams identify waste accumulation zones during routine patrols. Geo-tagged data is recorded in the Aqro  system for comprehensive tracking."
                         />
                         <div className="border-l-2 border-dashed border-[var(--color-border)] h-8 ml-6" />
                         

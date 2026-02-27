@@ -143,7 +143,7 @@ export default function LoginPage() {
               Citizen Login
             </h1>
             <p className="mt-1 text-xs text-slate-500 text-center">
-              M-Clean — Municipal Cleanliness Portal · Government of India
+              Aqro  — Municipal Cleanliness Portal · Government of India
             </p>
             <a
               href="http://localhost:3000"
