@@ -6,7 +6,7 @@
 
 export default function FeatureCard({ icon, title, description, accent = 'var(--color-gov-700)' }) {
   return (
-    <div className="gov-card rounded-xl p-6 flex flex-col gap-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 group">
+    <div className="gov-card rounded-xl p-6 flex flex-col gap-4 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 group" style={{ border: '2px solid var(--color-gov-800, #1e3a5f)' }}>
       {/* Icon */}
       <div
         className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform duration-300 group-hover:scale-110"
