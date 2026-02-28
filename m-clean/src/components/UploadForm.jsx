@@ -197,6 +197,7 @@ export default function UploadForm({ onSuccess, createdBy = null }) {
         e.preventDefault()
         setSubmitError('')
 
+        if (!createdBy) { setSubmitError('You must be signed in to submit a complaint.'); return }
         if (!imageFile) { setSubmitError('Please select an image to upload.'); return }
         if (!coords) { setSubmitError('Please capture your location before submitting.'); return }
         if (!areaName.trim()) { setSubmitError('Please enter the area name.'); return }

@@ -8,8 +8,10 @@ import { useState } from 'react'
 import UploadForm from '../components/UploadForm'
 import Toast, { useToast } from '../components/Toast'
 import { HiInformationCircle } from 'react-icons/hi2'
+import { useAuth } from '../context/AuthContext'
 
 export default function Home() {
+    const { user } = useAuth()
     const { toast, showToast, hideToast } = useToast()
     const [lastDocId, setLastDocId] = useState(null)
 
@@ -45,7 +47,7 @@ export default function Home() {
             </div>
 
             {/* Upload form — single source of truth */}
-            <UploadForm onSuccess={handleSuccess} />
+            <UploadForm onSuccess={handleSuccess} createdBy={user?.uid} />
 
             {/* Toast notification */}
             <Toast {...toast} onClose={hideToast} />

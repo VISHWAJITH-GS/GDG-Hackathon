@@ -143,6 +143,8 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
     try {
       await onDispatch(report.id, teamInput.trim())
       setDispatchDone(true)
+    } catch (err) {
+      console.error('[DetailModal] dispatch error:', err)
     } finally {
       setDispatching(false)
     }
@@ -150,8 +152,14 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
 
   async function changeStatus(newStatus) {
     setStatusBusy(true)
-    try { await onStatusChange(report.id, newStatus) }
-    finally { setStatusBusy(false) }
+    try {
+      await onStatusChange(report.id, newStatus)
+    } catch (err) {
+      console.error('[DetailModal] changeStatus error:', err)
+      // Error is already displayed via actionError banner in parent
+    } finally {
+      setStatusBusy(false)
+    }
   }
 
   const sc = STATUS_COLORS[report.status] ?? STATUS_COLORS.pending
@@ -331,6 +339,7 @@ export default function AdminDashboard() {
   const [activeTab,   setActiveTab]   = useState('all')
   const [search,      setSearch]      = useState('')
   const [selected,    setSelected]    = useState(null)   // currently open report
+  const [actionError, setActionError] = useState('')     // permission / network error from actions
 
   // Real-time feed for ALL reports
   useEffect(() => {
@@ -360,27 +369,45 @@ export default function AdminDashboard() {
   }
 
   async function handleStatusChange(reportId, newStatus) {
-    await updateDoc(doc(db, 'reports', reportId), {
-      status:     newStatus,
-      updated_at: serverTimestamp(),
-    })
+    setActionError('')
+    try {
+      await updateDoc(doc(db, 'reports', reportId), {
+        status:     newStatus,
+        updated_at: serverTimestamp(),
+      })
 
-    // Award points when complaint is cleared — idempotent, safe to call every time
-    if (newStatus === 'cleared') {
-      const report = complaints.find(c => c.id === reportId)
-      if (report?.created_by) {
-        await awardPointsForClear(reportId, report.created_by)
+      // Award points when complaint is cleared — idempotent, safe to call every time
+      if (newStatus === 'cleared') {
+        const report = complaints.find(c => c.id === reportId)
+        if (report?.created_by) {
+          await awardPointsForClear(reportId, report.created_by)
+        }
       }
+    } catch (err) {
+      console.error('[AdminDashboard] handleStatusChange error:', err)
+      const msg = err?.code === 'permission-denied' || err?.code === 'firestore/permission-denied'
+        ? 'Permission denied. Ensure your account has the municipality or admin role.'
+        : `Failed to update status: ${err?.message ?? 'Unknown error'}`
+      setActionError(msg)
     }
   }
 
   const handleDispatch = useCallback(async (reportId, teamName) => {
-    await updateDoc(doc(db, 'reports', reportId), {
-      status:        'dispatched',
-      assigned_to:   teamName,
-      dispatched_at: serverTimestamp(),
-      updated_at:    serverTimestamp(),
-    })
+    setActionError('')
+    try {
+      await updateDoc(doc(db, 'reports', reportId), {
+        status:        'dispatched',
+        assigned_to:   teamName,
+        dispatched_at: serverTimestamp(),
+        updated_at:    serverTimestamp(),
+      })
+    } catch (err) {
+      console.error('[AdminDashboard] handleDispatch error:', err)
+      const msg = err?.code === 'permission-denied' || err?.code === 'firestore/permission-denied'
+        ? 'Permission denied. Ensure your account has the municipality or admin role.'
+        : `Failed to dispatch team: ${err?.message ?? 'Unknown error'}`
+      setActionError(msg)
+    }
   }, [])
 
   // Filter + search
@@ -445,6 +472,24 @@ export default function AdminDashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        {/* ── Action error banner ── */}
+        {actionError && (
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+          >
+            <span className="mt-0.5 shrink-0">⚠️</span>
+            <span className="flex-1">{actionError}</span>
+            <button
+              onClick={() => setActionError('')}
+              className="shrink-0 text-red-500 hover:text-red-700 font-bold text-base leading-none"
+              aria-label="Dismiss error"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* ── Stats row ── */}
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
