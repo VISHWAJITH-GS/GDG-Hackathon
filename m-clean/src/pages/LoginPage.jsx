@@ -16,7 +16,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
-import { HiExclamationTriangle } from 'react-icons/hi2'
+import { HiExclamationTriangle, HiArrowLeft } from 'react-icons/hi2'
 
 // ── Ensure Firestore citizen doc exists (Google new users) ──
 async function ensureCitizenDoc(firebaseUser) {
@@ -127,6 +127,23 @@ export default function LoginPage() {
       style={{ background: 'linear-gradient(135deg, #0a2240 0%, #104080 55%, #1557a0 100%)' }}
     >
       <div className="w-full max-w-md">
+        {/* Back to Home */}
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold
+                       text-white border border-white/20 backdrop-blur-sm
+                       [background:linear-gradient(160deg,rgba(21,87,160,0.80)_0%,rgba(10,52,104,0.88)_100%)]
+                       shadow-[0_4px_14px_rgba(16,64,128,0.25),inset_0_1px_0_rgba(255,255,255,0.12)]
+                       hover:[background:linear-gradient(160deg,rgba(26,107,191,0.92)_0%,rgba(16,64,128,0.96)_100%)]
+                       hover:shadow-[0_6px_20px_rgba(16,64,128,0.35)] hover:-translate-y-px
+                       transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/50"
+          >
+            <HiArrowLeft className="w-4 h-4" aria-hidden="true" />
+            Back to Home
+          </Link>
+        </div>
+
         {/* Tricolor stripe */}
         <div className="flex h-1.5 rounded-t-xl overflow-hidden">
           <div className="flex-1" style={{ background: '#FF9933' }} />
@@ -138,12 +155,14 @@ export default function LoginPage() {
         <div className="bg-white rounded-b-xl shadow-2xl px-8 py-10">
           {/* Header */}
           <div className="flex flex-col items-center mb-8">
-            <ChakraMark />
+            <Link to="/" aria-label="Go to home page">
+              <ChakraMark />
+            </Link>
             <h1 className="mt-3 text-2xl font-bold text-[#0a2240] tracking-tight">
               Citizen Login
             </h1>
             <p className="mt-1 text-xs text-slate-500 text-center">
-              Aqro  — Municipal Cleanliness Portal · Government of India
+              Aqro  — Municipal Cleanliness Portal · Government of Tamil Nadu
             </p>
 
           </div>
