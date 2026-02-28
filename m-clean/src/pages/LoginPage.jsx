@@ -16,7 +16,7 @@ import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db, googleProvider } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
-import { HiExclamationTriangle, HiMicrophone } from 'react-icons/hi2'
+import { HiExclamationTriangle } from 'react-icons/hi2'
 
 // ── Ensure Firestore citizen doc exists (Google new users) ──
 async function ensureCitizenDoc(firebaseUser) {
@@ -123,7 +123,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 py-16"
+      className="flex-1 flex items-center justify-center px-4 py-16"
       style={{ background: 'linear-gradient(135deg, #0a2240 0%, #104080 55%, #1557a0 100%)' }}
     >
       <div className="w-full max-w-md">
@@ -138,28 +138,16 @@ export default function LoginPage() {
         <div className="bg-white rounded-b-xl shadow-2xl px-8 py-10">
           {/* Header */}
           <div className="flex flex-col items-center mb-8">
-            <ChakraMark />
+            <Link to="/" aria-label="Go to home page">
+              <ChakraMark />
+            </Link>
             <h1 className="mt-3 text-2xl font-bold text-[#0a2240] tracking-tight">
               Citizen Login
             </h1>
             <p className="mt-1 text-xs text-slate-500 text-center">
-              Aqro  — Municipal Cleanliness Portal · Government of India
+              Aqro  — Municipal Cleanliness Portal · Government of Tamil Nadu
             </p>
-            <a
-              href="http://localhost:3000"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold
-                         text-white border border-white/20 backdrop-blur-sm
-                         [background:linear-gradient(160deg,rgba(21,87,160,0.92)_0%,rgba(10,52,104,0.96)_100%)]
-                         shadow-[0_4px_14px_rgba(16,64,128,0.28),inset_0_1px_0_rgba(255,255,255,0.15)]
-                         hover:[background:linear-gradient(160deg,rgba(26,107,191,0.95)_0%,rgba(16,64,128,0.98)_100%)]
-                         hover:shadow-[0_6px_20px_rgba(16,64,128,0.38)] hover:-translate-y-px
-                         transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#104080] focus:ring-offset-2"
-            >
-              <HiMicrophone className="w-4 h-4" aria-hidden="true" />
-              Voice Bot
-            </a>
+
           </div>
 
           {/* Error */}

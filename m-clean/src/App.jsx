@@ -197,7 +197,7 @@ function GovLayout({ children }) {
       <EnvBanner />
 
       {/* ── 7. Page content ── */}
-      <main id="main-content" className="flex-1 bg-white">
+      <main id="main-content" className="flex-1 flex flex-col bg-white">
         {children}
       </main>
 
@@ -325,26 +325,26 @@ export default function App() {
           <Route path="/leaderboard"   element={<GovLayout><Leaderboard /></GovLayout>} />
           <Route path="/dashboard"     element={<GovLayout><OfficerDashboard /></GovLayout>} />
 
-          {/* ── Auth routes (no layout) ── */}
-          <Route path="/login"     element={<LoginPage />} />
-          <Route path="/register"  element={<RegisterPage />} />
+          {/* ── Auth routes ── */}
+          <Route path="/login"     element={<GovLayout><LoginPage /></GovLayout>} />
+          <Route path="/register"  element={<GovLayout><RegisterPage /></GovLayout>} />
 
           {/* ── Admin / Municipality login ── */}
-          <Route path="/admin"    element={<AdminLogin />} />
+          <Route path="/admin"    element={<GovLayout><AdminLogin /></GovLayout>} />
           {/* Legacy admin login alias */}
-          <Route path="/admin-mc" element={<AdminLoginPage />} />
+          <Route path="/admin-mc" element={<GovLayout><AdminLoginPage /></GovLayout>} />
 
           {/* ── Protected citizen dashboard ── */}
           <Route path="/citizen" element={
             <ProtectedRoute role="citizen">
-              <CitizenDashboard />
+              <GovLayout><CitizenDashboard /></GovLayout>
             </ProtectedRoute>
           } />
 
           {/* ── Protected admin/municipality dashboard ── */}
           <Route path="/admin/dashboard" element={
             <ProtectedRouteAdmin>
-              <AdminDashboard />
+              <GovLayout><AdminDashboard /></GovLayout>
             </ProtectedRouteAdmin>
           } />
 
