@@ -11,30 +11,27 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function getUserDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid))
-    }
     function isSignedIn() {
       return request.auth != null
     }
     function isOwner(uid) {
       return isSignedIn() && request.auth.uid == uid
     }
+    // Single get() — avoids the exists()+get() double-read which can cause
+    // timing / evaluation issues. Returns '' if the doc is missing.
+    function userRole() {
+      let u = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return isSignedIn() && u != null ? u.data.get('role', '') : '';
+    }
     // Elevated roles — "admin" OR "municipality"
     function isMunicipal() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && getUserDoc().data.role in ['admin', 'municipality']
+      return isSignedIn() && userRole() in ['admin', 'municipality']
     }
     function isAdmin() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && getUserDoc().data.role == 'admin'
+      return isSignedIn() && userRole() == 'admin'
     }
     function isCitizen() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && getUserDoc().data.role == 'citizen'
+      return isSignedIn() && userRole() == 'citizen'
     }
 
     // ── User profiles ──────────────────────────────────────── 

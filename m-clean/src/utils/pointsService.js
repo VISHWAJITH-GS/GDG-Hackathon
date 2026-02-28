@@ -52,22 +52,15 @@ export async function awardPointsForClear(reportId, citizenUid) {
         updated_at:     serverTimestamp(),
       })
 
-      // Upsert user document — works even if points field didn't exist before
+      // Only update if the user doc already exists — admin cannot create
+      // citizen docs (isOwner check in rules would fail for the admin's uid).
       if (userSnap.exists()) {
         tx.update(userRef, {
           points:              increment(POINTS_PER_CLEAR),
           cleared_complaints:  increment(1),
         })
-      } else {
-        // Create minimal user record if somehow it's missing
-        tx.set(userRef, {
-          uid:                citizenUid,
-          points:             POINTS_PER_CLEAR,
-          cleared_complaints: 1,
-          role:               'citizen',
-          created_at:         serverTimestamp(),
-        })
       }
+      // If doc is missing, silently skip points — avoids a permission error.
 
       return true
     })
