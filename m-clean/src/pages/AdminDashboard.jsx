@@ -121,10 +121,17 @@ function ReportCard({ report, onOpen }) {
 // ── Detail Modal ──────────────────────────────────────────────
 function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
   const overlayRef  = useRef(null)
-  const [teamInput, setTeamInput]    = useState(report.assigned_to ?? '')
-  const [dispatching, setDispatching] = useState(false)
-  const [statusBusy,  setStatusBusy]  = useState(false)
+  const [teamInput, setTeamInput]       = useState(report.assigned_to ?? '')
+  const [dispatching, setDispatching]   = useState(false)
+  const [statusBusy,  setStatusBusy]    = useState(false)
   const [dispatchDone, setDispatchDone] = useState(false)
+  // Local status tracks the *visually selected* status immediately on click
+  const [localStatus, setLocalStatus]   = useState(report.status ?? 'pending')
+
+  // Keep localStatus in-sync whenever the parent pushes a fresh report prop
+  useEffect(() => {
+    setLocalStatus(report.status ?? 'pending')
+  }, [report.status])
 
   // Close on overlay click
   function handleOverlay(e) {
@@ -151,18 +158,22 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
   }
 
   async function changeStatus(newStatus) {
+    if (statusBusy) return
+    const prevStatus = localStatus
+    setLocalStatus(newStatus)          // ← immediate visual update
     setStatusBusy(true)
     try {
       await onStatusChange(report.id, newStatus)
     } catch (err) {
       console.error('[DetailModal] changeStatus error:', err)
+      setLocalStatus(prevStatus)       // ← revert on failure
       // Error is already displayed via actionError banner in parent
     } finally {
       setStatusBusy(false)
     }
   }
 
-  const sc = STATUS_COLORS[report.status] ?? STATUS_COLORS.pending
+  const sc = STATUS_COLORS[localStatus] ?? STATUS_COLORS.pending
 
   return (
     <div
@@ -209,7 +220,7 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
           <div className="flex flex-wrap gap-2 items-center">
             <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold capitalize ${sc.bg} ${sc.text}`}>
               <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
-              {report.status ?? 'pending'}
+              {localStatus}
             </span>
             <span className="rounded-full bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 capitalize">
               {report.waste_type ?? 'Unknown type'}
@@ -251,7 +262,7 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
             <div className="flex flex-wrap gap-2">
               {STATUS_TABS.slice(1).map(s => {
                 const c = STATUS_COLORS[s]
-                const active = report.status === s
+                const active = localStatus === s   // uses localStatus for instant highlight
                 return (
                   <button
                     key={s}
@@ -370,6 +381,18 @@ export default function AdminDashboard() {
 
   async function handleStatusChange(reportId, newStatus) {
     setActionError('')
+    // ── Optimistic update ──────────────────────────────────────
+    // Capture the old state for a possible revert
+    const snapshot = complaints.find(c => c.id === reportId)
+    const oldStatus = snapshot?.status
+    setComplaints(prev =>
+      prev.map(c =>
+        c.id === reportId
+          ? { ...c, status: newStatus, updated_at: { toDate: () => new Date() } }
+          : c,
+      ),
+    )
+    // ──────────────────────────────────────────────────────────
     try {
       await updateDoc(doc(db, 'reports', reportId), {
         status:     newStatus,
@@ -384,9 +407,15 @@ export default function AdminDashboard() {
         }
       }
     } catch (err) {
+      // Revert optimistic update so the UI reflects the real persisted state
+      setComplaints(prev =>
+        prev.map(c =>
+          c.id === reportId ? { ...c, status: oldStatus } : c,
+        ),
+      )
       console.error('[AdminDashboard] handleStatusChange error:', err)
       const msg = err?.code === 'permission-denied' || err?.code === 'firestore/permission-denied'
-        ? 'Permission denied. Ensure your account has the municipality or admin role.'
+        ? 'Permission denied. Ensure your account has the municipality or admin role in Firestore (users/{uid}.role).'
         : `Failed to update status: ${err?.message ?? 'Unknown error'}`
       setActionError(msg)
     }
@@ -394,6 +423,18 @@ export default function AdminDashboard() {
 
   const handleDispatch = useCallback(async (reportId, teamName) => {
     setActionError('')
+    // ── Optimistic update ──────────────────────────────────────
+    const snapshot = complaints.find(c => c.id === reportId)
+    const oldStatus     = snapshot?.status
+    const oldAssignedTo = snapshot?.assigned_to
+    setComplaints(prev =>
+      prev.map(c =>
+        c.id === reportId
+          ? { ...c, status: 'dispatched', assigned_to: teamName, updated_at: { toDate: () => new Date() } }
+          : c,
+      ),
+    )
+    // ──────────────────────────────────────────────────────────
     try {
       await updateDoc(doc(db, 'reports', reportId), {
         status:        'dispatched',
@@ -402,13 +443,19 @@ export default function AdminDashboard() {
         updated_at:    serverTimestamp(),
       })
     } catch (err) {
+      // Revert optimistic update
+      setComplaints(prev =>
+        prev.map(c =>
+          c.id === reportId ? { ...c, status: oldStatus, assigned_to: oldAssignedTo } : c,
+        ),
+      )
       console.error('[AdminDashboard] handleDispatch error:', err)
       const msg = err?.code === 'permission-denied' || err?.code === 'firestore/permission-denied'
-        ? 'Permission denied. Ensure your account has the municipality or admin role.'
+        ? 'Permission denied. Ensure your account has the municipality or admin role in Firestore (users/{uid}.role).'
         : `Failed to dispatch team: ${err?.message ?? 'Unknown error'}`
       setActionError(msg)
     }
-  }, [])
+  }, [complaints])
 
   // Filter + search
   const filtered = useMemo(() => {
