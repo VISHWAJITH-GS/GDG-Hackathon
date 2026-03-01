@@ -114,7 +114,8 @@ app.post(
       detected_items: analysis.detected_items,
       recommended_action: analysis.recommended_action,
       confidence:     analysis.confidence,
-      status:         "Open",
+      // Status lifecycle: pending → analyzing → dispatched → cleared
+      status:         "analyzing",
       ai_analyzed_at: new Date().toISOString(),
     };
 
@@ -129,11 +130,11 @@ app.post(
     // Step 5 — Hazard detection (agentic pipeline)
     let hazardResponse = null;
     if (isHazardous(analysis)) {
-      hazardResponse = await handleHazard(analysis, latitude, longitude, locationZone);
+      hazardResponse = await handleHazard(analysis, latitude, longitude, locationZone)
       await docRef.update({
-        status: "Escalated",
+        status:       'Escalated',
         hazardAlertId: hazardResponse.alert_id,
-      });
+      })
     }
 
     res.status(200).json({

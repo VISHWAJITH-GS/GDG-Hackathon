@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import { auth, db } from '../firebase'
 import { useAuth } from '../context/AuthContext'
@@ -99,21 +99,50 @@ function ProfileCard({ user, userDoc, complaints }) {
 export default function CitizenDashboard() {
   const { user, userDoc } = useAuth()
   const navigate = useNavigate()
-  const [complaints, setComplaints] = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [activeTab,  setActiveTab]  = useState('all')
-  const [view,       setView]       = useState('profile')
+  const [complaints,       setComplaints]       = useState([])
+  const [loading,          setLoading]          = useState(true)
+  const [activeTab,        setActiveTab]        = useState('all')
+  const [view,             setView]             = useState('profile')
+  const [unreadCount,      setUnreadCount]      = useState(0)
 
   useEffect(() => {
     if (!user?.uid) return
+    // No orderBy — avoids composite index requirement; sort client-side below
     const q = query(
       collection(db, 'reports'),
       where('created_by', '==', user.uid),
-      orderBy('created_at', 'desc'),
     )
     const unsub = onSnapshot(q,
-      snap => { setComplaints(snap.docs.map(d => ({ id: d.id, ...d.data() }))); setLoading(false) },
-      () => setLoading(false)
+      snap => {
+        // Sort newest-first on the client
+        const docs = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const ta = a.created_at?.toDate?.() ?? new Date(a.created_at ?? 0)
+            const tb = b.created_at?.toDate?.() ?? new Date(b.created_at ?? 0)
+            return tb - ta
+          })
+        setComplaints(docs)
+        setLoading(false)
+      },
+      err => {
+        console.error('[CitizenDashboard] complaints query error:', err)
+        setLoading(false)
+      },
+    )
+    return unsub
+  }, [user?.uid])
+
+  // Live count of unreviewed notifications — single where to avoid composite index
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(
+      collection(db, 'notifications'),
+      where('user_id', '==', user.uid),
+    )
+    const unsub = onSnapshot(q,
+      snap => setUnreadCount(snap.docs.filter(d => !d.data().review_submitted).length),
+      () => {}
     )
     return unsub
   }, [user?.uid])
@@ -181,6 +210,19 @@ export default function CitizenDashboard() {
               {label}
             </button>
           ))}
+          {/* Notifications shortcut */}
+          <button
+            onClick={() => navigate('/notifications')}
+            className="relative rounded-lg px-4 py-2 text-sm font-semibold transition-colors bg-white text-[#104080] border border-slate-300 hover:bg-slate-50 flex items-center gap-2"
+          >
+            <span>🔔</span>
+            Notifications
+            {unreadCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {view === 'profile' && (

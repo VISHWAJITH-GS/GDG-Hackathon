@@ -24,6 +24,8 @@ import AdminLogin from './pages/AdminLogin'
 import HeatmapPage from './pages/HeatmapPage'
 import DailyReportPage from './pages/DailyReportPage'
 import Leaderboard from './pages/Leaderboard'
+import NotificationsPage from './pages/NotificationsPage'
+import TeamLeaderboard from './pages/TeamLeaderboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import ProtectedRouteAdmin from './components/ProtectedRouteAdmin'
 import { AuthProvider } from './context/AuthContext'
@@ -36,7 +38,6 @@ const NAV_ITEMS = [
   { to: '/map', label: 'Monitoring Map', end: true },
   { to: '/leaderboard', label: 'Leaderboard', end: true },
   { to: '/daily-report', label: 'Daily Report', end: true },
-  { to: '/login', label: 'Login', end: true },
 ]
 
 // ── Emblem SVG (Ashoka-style simplified wheel) ────────────────
@@ -99,6 +100,9 @@ function EnvBanner() {
 
 // ── Full layout shell ─────────────────────────────────────────
 function GovLayout({ children }) {
+  const { pathname } = useLocation()
+  const isHome = pathname === '/'
+
   return (
     <div className="flex flex-col min-h-dvh">
 
@@ -174,6 +178,23 @@ function GovLayout({ children }) {
                 {label}
               </NavLink>
             ))}
+            {isHome && (
+              <NavLink
+                to="/login"
+                end
+                className={({ isActive }) =>
+                  [
+                    'px-3 py-1.5 text-xs font-semibold tracking-wide rounded transition-colors duration-150',
+                    'border-b-2 focus:outline-none whitespace-nowrap',
+                    isActive
+                      ? 'border-[var(--color-gov-700)] text-[var(--color-gov-900)] bg-[var(--color-gov-50)]'
+                      : 'border-transparent text-[var(--color-gov-600)] hover:text-[var(--color-gov-900)] hover:bg-[var(--color-gov-50)]',
+                  ].join(' ')
+                }
+              >
+                Login
+              </NavLink>
+            )}
           </nav>
 
           {/* Spacer */}
@@ -262,6 +283,17 @@ function GovLayout({ children }) {
                     {label}
                   </NavLink>
                 ))}
+                {isHome && (
+                  <NavLink
+                    to="/login"
+                    end
+                    className={({ isActive }) =>
+                      `text-xs transition-colors ${isActive ? 'text-[#FF9933] font-semibold' : 'text-blue-200 hover:text-white'}`
+                    }
+                  >
+                    Login
+                  </NavLink>
+                )}
               </nav>
             </div>
 
@@ -338,6 +370,20 @@ export default function App() {
           <Route path="/citizen" element={
             <ProtectedRoute role="citizen">
               <GovLayout><CitizenDashboard /></GovLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* ── Protected team leaderboard (admin/municipality) ── */}
+          <Route path="/admin/teams-leaderboard" element={
+            <ProtectedRouteAdmin>
+              <GovLayout><TeamLeaderboard /></GovLayout>
+            </ProtectedRouteAdmin>
+          } />
+
+          {/* ── Protected citizen notifications ── */}
+          <Route path="/notifications" element={
+            <ProtectedRoute role="citizen">
+              <GovLayout><NotificationsPage /></GovLayout>
             </ProtectedRoute>
           } />
 

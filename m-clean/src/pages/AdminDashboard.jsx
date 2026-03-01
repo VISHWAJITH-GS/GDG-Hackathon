@@ -15,14 +15,17 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   collection, query, onSnapshot, orderBy,
-  doc, updateDoc, serverTimestamp,
+  doc, updateDoc, serverTimestamp, addDoc,
+  getDocs, writeBatch,
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { auth, db } from '../firebase'
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
+import { auth, db, storage } from '../firebase'
 import { useAuth } from '../context/AuthContext'
 import StatusBadge from '../components/StatusBadge'
 import { HiInboxArrowDown } from 'react-icons/hi2'
 import { awardPointsForClear } from '../utils/pointsService'
+import { awardTeamPointsForClear } from '../utils/teamScoreService'
 
 const STATUS_TABS = ['all', 'pending', 'analyzing', 'dispatched', 'cleared']
 
@@ -121,12 +124,20 @@ function ReportCard({ report, onOpen }) {
 // ── Detail Modal ──────────────────────────────────────────────
 function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
   const overlayRef  = useRef(null)
-  const [teamInput, setTeamInput]       = useState(report.assigned_to ?? '')
-  const [dispatching, setDispatching]   = useState(false)
-  const [statusBusy,  setStatusBusy]    = useState(false)
-  const [dispatchDone, setDispatchDone] = useState(false)
+  const [teamInput, setTeamInput]         = useState(report.assigned_to ?? '')
+  const [dispatching, setDispatching]     = useState(false)
+  const [statusBusy,  setStatusBusy]      = useState(false)
+  const [dispatchDone, setDispatchDone]   = useState(false)
   // Local status tracks the *visually selected* status immediately on click
-  const [localStatus, setLocalStatus]   = useState(report.status ?? 'pending')
+  const [localStatus, setLocalStatus]     = useState(report.status ?? 'pending')
+  // ── Clear-photo upload state ──────────────────────────────
+  const [showClearUpload, setShowClearUpload] = useState(false)
+  const clearFileRef                          = useRef(null)
+  const [clearFile,      setClearFile]        = useState(null)
+  const [clearPreview,   setClearPreview]     = useState(null)
+  const [clearUploading, setClearUploading]   = useState(false)
+  const [clearProgress,  setClearProgress]    = useState(0)
+  const [clearError,     setClearError]       = useState('')
 
   // Keep localStatus in-sync whenever the parent pushes a fresh report prop
   useEffect(() => {
@@ -158,6 +169,11 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
   }
 
   async function changeStatus(newStatus) {
+    // "Cleared" requires a proof-of-work photo — open upload panel instead
+    if (newStatus === 'cleared') {
+      setShowClearUpload(true)
+      return
+    }
     if (statusBusy) return
     const prevStatus = localStatus
     setLocalStatus(newStatus)          // ← immediate visual update
@@ -167,9 +183,48 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
     } catch (err) {
       console.error('[DetailModal] changeStatus error:', err)
       setLocalStatus(prevStatus)       // ← revert on failure
-      // Error is already displayed via actionError banner in parent
     } finally {
       setStatusBusy(false)
+    }
+  }
+
+  function handleClearFileSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setClearFile(file)
+    setClearPreview(URL.createObjectURL(file))
+    setClearError('')
+  }
+
+  async function handleClearSubmit() {
+    if (!clearFile) { setClearError('Please select a photo of the cleared area.'); return }
+    setClearUploading(true)
+    setClearError('')
+    try {
+      const ext        = clearFile.name.split('.').pop()
+      const storePath  = `cleaned/${report.id}_${Date.now()}.${ext}`
+      const storageRef = ref(storage, storePath)
+      const uploadTask = uploadBytesResumable(storageRef, clearFile)
+      const downloadURL = await new Promise((resolve, reject) => {
+        uploadTask.on(
+          'state_changed',
+          snap => setClearProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
+          reject,
+          async () => resolve(await getDownloadURL(uploadTask.snapshot.ref)),
+        )
+      })
+      // Upload complete — commit status change with the cleaned image URL
+      setLocalStatus('cleared')
+      setShowClearUpload(false)
+      setClearFile(null)
+      setClearPreview(null)
+      await onStatusChange(report.id, 'cleared', downloadURL)
+    } catch (err) {
+      console.error('[DetailModal] clear upload error:', err)
+      setClearError('Upload failed. Please try again.')
+    } finally {
+      setClearUploading(false)
+      setClearProgress(0)
     }
   }
 
@@ -261,68 +316,183 @@ function DetailModal({ report, onClose, onStatusChange, onDispatch }) {
             </p>
             <div className="flex flex-wrap gap-2">
               {STATUS_TABS.slice(1).map(s => {
-                const c = STATUS_COLORS[s]
-                const active = localStatus === s   // uses localStatus for instant highlight
+                const c          = STATUS_COLORS[s]
+                const active     = localStatus === s
+                const isClearBtn = s === 'cleared'
                 return (
                   <button
                     key={s}
-                    disabled={statusBusy || active}
+                    disabled={statusBusy || active || clearUploading}
                     onClick={() => changeStatus(s)}
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold capitalize transition-all
                       ${active
                         ? `${c.bg} ${c.text} ring-2 ring-offset-1 ring-current`
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50'
+                        : isClearBtn
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 disabled:opacity-50'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-50'
                       }`}
                   >
-                    {statusBusy && active ? '…' : s}
+                    {statusBusy && active ? '…' : isClearBtn && !active ? '📷 Mark Cleared' : s}
                   </button>
                 )
               })}
             </div>
           </div>
 
-          {/* ── Dispatch Team ── */}
-          <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
-            <p className="text-xs font-bold text-purple-900 uppercase tracking-wider mb-3">
-              🚛 Dispatch Team
-            </p>
-
-            {dispatchDone ? (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 font-semibold flex items-center gap-2">
-                <span>✅</span>
-                <span>Team "{teamInput}" dispatched successfully.</span>
-              </div>
-            ) : (
-              <>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={teamInput}
-                    onChange={e => setTeamInput(e.target.value)}
-                    placeholder="Enter team name or officer ID…"
-                    className="flex-1 rounded-lg border border-purple-300 bg-white px-3 py-2 text-sm
-                               focus:outline-none focus:ring-2 focus:ring-purple-400 placeholder:text-slate-400 transition"
-                  />
-                  <button
-                    onClick={handleDispatch}
-                    disabled={dispatching || !teamInput.trim()}
-                    className="rounded-lg bg-purple-700 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed
-                               text-white text-xs font-bold px-4 py-2 transition-colors flex items-center gap-1.5 whitespace-nowrap"
-                  >
-                    {dispatching ? (
-                      <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                      </svg>
-                    ) : '🚛'} Dispatch
-                  </button>
-                </div>
-                <p className="text-xs text-purple-600 mt-2">
-                  This will set status → <strong>dispatched</strong>, record the team name and timestamp.
+          {/* ── Clear Photo Upload Panel ── */}
+          {showClearUpload && (
+            <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-4 space-y-3">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>📷</span> Upload Proof of Cleanup
                 </p>
-              </>
-            )}
-          </div>
+                <button
+                  onClick={() => { setShowClearUpload(false); setClearFile(null); setClearPreview(null); setClearError('') }}
+                  className="text-emerald-700 hover:text-emerald-900 text-sm font-bold leading-none"
+                  aria-label="Cancel clear upload"
+                >✕</button>
+              </div>
+              <p className="text-xs text-emerald-700 leading-relaxed">
+                A photo of the cleaned area is required before marking this complaint as resolved.
+                It will be sent to the citizen as the <strong>"after"</strong> proof image in their notification.
+              </p>
+
+              {/* Drop / pick zone */}
+              <div
+                onClick={() => clearFileRef.current?.click()}
+                className="cursor-pointer rounded-xl border-2 border-dashed border-emerald-400 bg-white
+                           hover:bg-emerald-50/60 flex flex-col items-center justify-center h-44
+                           transition-colors overflow-hidden group"
+              >
+                {clearPreview ? (
+                  <img src={clearPreview} alt="Cleared area preview" className="h-full w-full object-cover" />
+                ) : (
+                  <>
+                    <span className="text-4xl mb-2">🖼️</span>
+                    <p className="text-xs font-semibold text-emerald-700 group-hover:text-emerald-900">Click to select photo</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">JPG, PNG or WebP — max 10 MB</p>
+                  </>
+                )}
+              </div>
+              <input
+                ref={clearFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleClearFileSelect}
+              />
+
+              {/* Upload progress bar */}
+              {clearUploading && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] text-emerald-700 font-semibold">
+                    <span>Uploading…</span><span>{clearProgress}%</span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-emerald-200 overflow-hidden">
+                    <div
+                      className="h-2 rounded-full bg-emerald-500 transition-all duration-200"
+                      style={{ width: `${clearProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Error */}
+              {clearError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{clearError}</p>
+              )}
+
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                {clearFile && !clearUploading && (
+                  <button
+                    onClick={() => { setClearFile(null); setClearPreview(null); if (clearFileRef.current) clearFileRef.current.value = '' }}
+                    className="flex-1 rounded-lg border border-slate-300 text-slate-600 text-xs font-semibold py-2 hover:bg-slate-50 transition-colors"
+                  >
+                    Change Photo
+                  </button>
+                )}
+                <button
+                  onClick={handleClearSubmit}
+                  disabled={!clearFile || clearUploading}
+                  className="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed
+                             text-white text-xs font-bold py-2.5 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  {clearUploading ? (
+                    <>
+                      <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                      </svg>
+                      Uploading…
+                    </>
+                  ) : '✅ Confirm & Mark Cleared'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Dispatch Team ── */}
+          {localStatus === 'cleared' ? (
+            /* When complaint is cleared — show assigned team name only, no dispatch button */
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
+              <span className="text-2xl leading-none">👷</span>
+              <div>
+                <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider leading-none mb-1">
+                  Assigned Team
+                </p>
+                <p className="text-sm font-semibold text-emerald-800">
+                  {report.assigned_to || teamInput || '—'}
+                </p>
+              </div>
+              <span className="ml-auto bg-emerald-200 text-emerald-800 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full">
+                Cleared ✓
+              </span>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
+              <p className="text-xs font-bold text-purple-900 uppercase tracking-wider mb-3">
+                🚛 Dispatch Team
+              </p>
+
+              {dispatchDone ? (
+                <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 font-semibold flex items-center gap-2">
+                  <span>✅</span>
+                  <span>Team "{teamInput}" dispatched successfully.</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={teamInput}
+                      onChange={e => setTeamInput(e.target.value)}
+                      placeholder="Enter team name or officer ID…"
+                      className="flex-1 rounded-lg border border-purple-300 bg-white px-3 py-2 text-sm
+                                 focus:outline-none focus:ring-2 focus:ring-purple-400 placeholder:text-slate-400 transition"
+                    />
+                    <button
+                      onClick={handleDispatch}
+                      disabled={dispatching || !teamInput.trim()}
+                      className="rounded-lg bg-purple-700 hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed
+                                 text-white text-xs font-bold px-4 py-2 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                    >
+                      {dispatching ? (
+                        <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                        </svg>
+                      ) : '🚛'} Dispatch
+                    </button>
+                  </div>
+                  <p className="text-xs text-purple-600 mt-2">
+                    This will set status → <strong>dispatched</strong>, record the team name and timestamp.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -379,7 +549,7 @@ export default function AdminDashboard() {
     navigate('/admin', { replace: true })
   }
 
-  async function handleStatusChange(reportId, newStatus) {
+  async function handleStatusChange(reportId, newStatus, cleanedImageUrl = '') {
     setActionError('')
     // ── Optimistic update ──────────────────────────────────────
     // Capture the old state for a possible revert
@@ -388,7 +558,8 @@ export default function AdminDashboard() {
     setComplaints(prev =>
       prev.map(c =>
         c.id === reportId
-          ? { ...c, status: newStatus, updated_at: { toDate: () => new Date() } }
+          ? { ...c, status: newStatus, updated_at: { toDate: () => new Date() },
+              ...(cleanedImageUrl ? { cleaned_image_url: cleanedImageUrl } : {}) }
           : c,
       ),
     )
@@ -397,13 +568,42 @@ export default function AdminDashboard() {
       await updateDoc(doc(db, 'reports', reportId), {
         status:     newStatus,
         updated_at: serverTimestamp(),
+        // Store cleared_at and cleaned_image_url when transitioning to cleared
+        ...(newStatus === 'cleared' ? {
+          cleared_at: serverTimestamp(),
+          ...(cleanedImageUrl ? { cleaned_image_url: cleanedImageUrl } : {}),
+        } : {}),
       })
 
       // Award points when complaint is cleared — idempotent, safe to call every time
       if (newStatus === 'cleared') {
-        const report = complaints.find(c => c.id === reportId)
-        if (report?.created_by) {
-          await awardPointsForClear(reportId, report.created_by)
+        // Use snapshot (captured before optimistic update) for stable field reads
+        if (snapshot?.created_by) {
+          await awardPointsForClear(reportId, snapshot.created_by)
+        }
+        // Award team performance points
+        if (snapshot?.assigned_to) {
+          await awardTeamPointsForClear(reportId, snapshot.assigned_to)
+        }
+        // Create notification document for the citizen — guarded by notification_sent flag
+        if (snapshot?.created_by && !snapshot?.notification_sent) {
+          await addDoc(collection(db, 'notifications'), {
+            user_id:          snapshot.created_by,
+            complaint_id:     reportId,
+            before_image:     snapshot.image_url ?? '',
+            after_image:      cleanedImageUrl || snapshot.cleaned_image_url || '',
+            team_name:        snapshot.assigned_to       ?? '',
+            cleared_at:       serverTimestamp(),
+            review_submitted: false,
+            message:          `Your complaint has been resolved by Team ${
+                                snapshot.assigned_to || 'Municipal'
+                              }.`,
+            location:         snapshot.address ?? snapshot.area_name ?? '',
+          })
+          // Mark flag on the report so re-clearing never creates a duplicate
+          await updateDoc(doc(db, 'reports', reportId), {
+            notification_sent: true,
+          })
         }
       }
     } catch (err) {
@@ -478,6 +678,26 @@ export default function AdminDashboard() {
     status: s,
     count: complaints.filter(c => c.status === s).length,
   }))
+
+  // ── Clear all complaints ──────────────────────────────────
+  const [clearing, setClearing] = useState(false)
+
+  async function handleClearAll() {
+    if (!window.confirm(
+      `Delete ALL ${complaints.length} complaint(s) permanently? This cannot be undone.`
+    )) return
+    setClearing(true)
+    try {
+      const snap = await getDocs(collection(db, 'reports'))
+      const batch = writeBatch(db)
+      snap.docs.forEach(d => batch.delete(d.ref))
+      await batch.commit()
+    } catch (err) {
+      setActionError('Failed to clear complaints: ' + err.message)
+    } finally {
+      setClearing(false)
+    }
+  }
 
   const roleBadge = userDoc?.role === 'municipality'
     ? { label: 'Municipality Officer', color: 'bg-blue-500/20 text-blue-200 ring-blue-400/30' }
@@ -594,6 +814,36 @@ export default function AdminDashboard() {
             className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm w-full sm:w-60
                        focus:outline-none focus:ring-2 focus:ring-[#104080] placeholder:text-slate-400 transition"
           />
+          <button
+            onClick={() => navigate('/admin/teams-leaderboard')}
+            className="rounded-lg bg-[#0a2240] hover:bg-[#104080] text-white text-xs font-semibold
+                       px-3 py-1.5 ring-1 ring-[#104080]/40 transition-colors whitespace-nowrap flex items-center gap-1.5"
+          >
+            <span>🏆</span>
+            Teams Leaderboard
+          </button>
+          <button
+            onClick={handleClearAll}
+            disabled={clearing || complaints.length === 0}
+            className="rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed
+                       text-white text-xs font-semibold px-3 py-1.5 ring-1 ring-red-700/40
+                       transition-colors whitespace-nowrap flex items-center gap-1.5"
+          >
+            {clearing ? (
+              <>
+                <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Clearing…
+              </>
+            ) : (
+              <>
+                <span>🗑</span>
+                Clear All
+              </>
+            )}
+          </button>
         </div>
 
         {/* Count */}

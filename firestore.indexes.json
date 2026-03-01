@@ -1,31 +1,19 @@
 {
     "indexes": [
         {
-            "collectionGroup": "reports",
+            "collectionGroup": "notifications",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "metadata.processed_at",
-                    "order": "DESCENDING"
-                },
-                {
-                    "fieldPath": "__name__",
-                    "order": "DESCENDING"
-                }
+                { "fieldPath": "user_id", "order": "ASCENDING" },
+                { "fieldPath": "cleared_at", "order": "DESCENDING" }
             ]
         },
         {
-            "collectionGroup": "reports",
+            "collectionGroup": "notifications",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "status",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "metadata.processed_at",
-                    "order": "DESCENDING"
-                }
+                { "fieldPath": "user_id", "order": "ASCENDING" },
+                { "fieldPath": "review_submitted", "order": "ASCENDING" }
             ]
         }
     ],

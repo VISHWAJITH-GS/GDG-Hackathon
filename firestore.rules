@@ -58,7 +58,8 @@ service cloud.firestore {
                       isMunicipal()
                       || resource.data.created_by == request.auth.uid
                     );
-      allow delete: if false;
+      // Municipal officers and admins may delete reports (e.g. bulk clear)
+      allow delete: if isMunicipal();
     }
 
     // ── Daily summaries (admin read-only) ──────────────────── 
@@ -75,10 +76,32 @@ service cloud.firestore {
 
     // ── Notifications ──────────────────────────────────────── 
     match /notifications/{notifId} {
+      // Citizens read their own; municipality read all
       allow read:   if isSignedIn()
-                    && (resource.data.uid == request.auth.uid || isMunicipal());
+                    && (resource.data.user_id == request.auth.uid || isMunicipal());
       allow create: if isMunicipal();
-      allow update: if isSignedIn() && resource.data.uid == request.auth.uid;
+      // Citizen can mark review_submitted / delete their own after review
+      allow update: if isSignedIn() && resource.data.user_id == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.user_id == request.auth.uid;
+    }
+
+    // ── Teams ──────────────────────────────────────────────── 
+    match /teams/{teamName} {
+      allow read:   if true;
+      // Any signed-in user can update (needed for citizen rating bonus via transaction)
+      allow update: if isSignedIn();
+      // Create only by municipality (first-clear transaction runs as municipality officer)
+      allow create: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // ── Reviews ────────────────────────────────────────────── 
+    match /reviews/{reviewId} {
+      allow create: if isSignedIn()
+                    && request.resource.data.user_id == request.auth.uid;
+      allow read:   if isSignedIn()
+                    && (resource.data.user_id == request.auth.uid || isMunicipal());
+      allow update: if false;
       allow delete: if isAdmin();
     }
 
