@@ -216,7 +216,7 @@ function HeroSection() {
               <HiMapPin className="w-5 h-5" aria-hidden="true" />
               Monitoring Map
             </HeroButton>
-            <ExternalHeroButton href="http://localhost:3000" variant="primary">
+            <ExternalHeroButton href="https://kural.aqro.in/" variant="primary">
               <HiMicrophone className="w-5 h-5" aria-hidden="true" />
               Voice Bot
             </ExternalHeroButton>
