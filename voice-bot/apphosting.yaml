@@ -1,0 +1,20 @@
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+
+env:
+  - variable: NODE_ENV
+    value: production
+  - variable: NEXT_TELEMETRY_DISABLED
+    value: "1"
+  # Add your LiveKit secrets in the Firebase App Hosting console
+  # under Secrets & environment variables, then reference them here:
+  # - variable: LIVEKIT_URL
+  #   secret: LIVEKIT_URL
+  # - variable: LIVEKIT_API_KEY
+  #   secret: LIVEKIT_API_KEY
+  # - variable: LIVEKIT_API_SECRET
+  #   secret: LIVEKIT_API_SECRET
